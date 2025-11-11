@@ -1,0 +1,238 @@
+/* src/styles/globals.css */
+/* Tailwind base - required */
+/* src/styles/globals.css */
+/* Tailwind base - required */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ========================================
+   🌈 GROOVNATION FROSTFLOW + DREAMWAVE HYBRID v2.5
+   ======================================== */
+
+/* 🎨 Color Palette + Variable Setup */
+:root {
+  /* LIGHT THEME */
+  --bg-main: linear-gradient(
+    120deg,
+    #cde6ff 0%,
+    #e5d6ff 40%,
+    #ffddee 100%
+  );
+  --text-main: #0e0e0e;
+  --glass-bg: rgba(255, 255, 255, 0.55);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --accent-cyan: #95eaff;
+  --accent-purple: #a47cff;
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.dark {
+  /* DARK THEME */
+  --bg-main: linear-gradient(
+    120deg,
+    #1a1a2e 0%,
+    #232345 40%,
+    #2e2e5f 100%
+  );
+  --text-main: #f5f5f5;
+  --glass-bg: rgba(20, 20, 20, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --accent-cyan: #6ce6ff;
+  --accent-purple: #9f7bff;
+  --shadow: 0 6px 24px rgba(255, 255, 255, 0.05);
+}
+
+/* Smooth color/blur transitions */
+html,
+body,
+.frost-glass {
+  transition:
+    background 0.6s ease,
+    color 0.4s ease,
+    backdrop-filter 0.6s ease,
+    box-shadow 0.4s ease;
+}
+
+/* 🩵 Base Body Styling */
+body {
+  background: var(--bg-main);
+  background-attachment: fixed;
+  background-size: 200% 200%;
+  color: var(--text-main);
+  animation: dreamyShift 18s ease-in-out infinite;
+}
+
+/* ✨ Frosted-glass reusable surface */
+.frost-glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow);
+  border-radius: 18px;
+}
+
+/* Gradient text accent */
+.text-accent {
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(var(--accent-cyan), var(--accent-purple));
+  border-radius: 4px;
+}
+
+/* Hover pop and motion utilities */
+.hover-pop {
+  transition: transform 0.25s ease;
+}
+.hover-pop:hover {
+  transform: scale(1.05);
+}
+
+.motion-fade {
+  transition: all 0.3s ease-in-out;
+}
+
+.motion-pop {
+  transition: transform 0.25s ease;
+}
+.motion-pop:hover {
+  transform: scale(1.04);
+}
+
+/* ===========================
+   🪄 Improved Hover Contrast
+   =========================== */
+
+/* For links, buttons, sidebar items, etc. */
+.hover-contrast {
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    transform 0.25s ease;
+}
+
+/* 💡 Light Mode Hover Contrast */
+body:not(.dark) .hover-contrast:hover {
+  background: linear-gradient(135deg, #95eaff, #a47cff);
+  color: #fff !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(164, 124, 255, 0.25);
+}
+
+/* 🌙 Dark Mode Hover Contrast */
+body.dark .hover-contrast:hover {
+  background: linear-gradient(135deg, #6ce6ff, #9f7bff);
+  color: #ffffff !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(111, 230, 255, 0.3);
+}
+
+/* 🧊 Optional active (clicked) feel */
+.hover-contrast:active {
+  transform: scale(0.97);
+  opacity: 0.95;
+}
+
+/* ✨ Subtle blur layer background */
+.gradient-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.25;
+  pointer-events: none;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.15),
+    rgba(230, 230, 255, 0.1)
+  );
+}
+
+/* 🌊 Gradient shift motion */
+@keyframes dreamyShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* ✨ Optional ethereal glow (music pulse) */
+body::before {
+  content: "";
+  position: fixed;
+  top: -10%;
+  left: -10%;
+  right: -10%;
+  bottom: -10%;
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 255, 255, 0.06),
+    transparent 60%
+  );
+  animation: glowPulse 6s ease-in-out infinite;
+  z-index: -2;
+}
+
+@keyframes glowPulse {
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Scroll smoothness */
+html {
+  scroll-behavior: smooth;
+}
+
+/* ===============================
+   ✨ Global Hover / Depth Utilities
+   =============================== */
+
+/* Soft hover glow for icons, buttons */
+.hover-glow {
+  transition: all 0.3s ease;
+}
+.hover-glow:hover {
+  filter: drop-shadow(0 0 8px rgba(164, 124, 255, 0.4))
+          drop-shadow(0 0 4px rgba(149, 234, 255, 0.3));
+}
+
+/* Hover-contrast for darker glass regions */
+.hover-contrast {
+  transition: all 0.25s ease;
+}
+.hover-contrast:hover {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: brightness(1.1);
+}
+
+/* 3D motion-light effect for glowing glass */
+.glass-depth {
+  box-shadow:
+    inset 0 1px 2px rgba(255, 255, 255, 0.15),
+    0 8px 24px rgba(164, 124, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.4s ease;
+}
+.glass-depth:hover {
+  box-shadow:
+    inset 0 1px 4px rgba(255, 255, 255, 0.25),
+    0 12px 32px rgba(164, 124, 255, 0.25);
+}
