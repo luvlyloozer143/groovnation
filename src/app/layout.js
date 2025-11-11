@@ -2,7 +2,7 @@
 import "../styles/globals.css";
 import "../styles/themes.css";
 import AppWrapper from "@/components/layout/AppWrapper";
-import SessionWrapper from "@/components/sessionwrapper"; // 👈 use your existing one
+import SessionWrapper from "@/components/SessionWrapper"; // 👈 use your existing one
 
 export const metadata = { title: "GroovNation" };
 
