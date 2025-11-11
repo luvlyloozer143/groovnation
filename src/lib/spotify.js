@@ -1,64 +1,101 @@
-import SpotifyWebApi from "spotify-web-api-node";
+// src/lib/spotify.js
 
-const spotifyApi = new SpotifyWebApi({
-  clientId: process.env.SPOTIFY_CLIENT_ID,
-  clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
-  redirectUri: process.env.SPOTIFY_REDIRECT_URI,
-});
+let access_token = null;
 
-// 🔑 Helper to set the access token before each call
+/**
+ * 🔐 Set Spotify access token (after login)
+ */
 export function setAccessToken(token) {
-  spotifyApi.setAccessToken(token);
+  access_token = token;
 }
 
-// 🎵 Fetch new releases
+/**
+ * 🎵 Fetch Top Tamil Trending Songs (2025)
+ * Uses Spotify search API to get Tamil genre tracks
+ */
 export async function fetchNewReleases() {
+  if (!access_token) {
+    console.error("Spotify access token missing");
+    return [];
+  }
+
   try {
-    const data = await spotifyApi.getNewReleases({ limit: 20 });
-    return data.body.albums.items.map((album) => ({
-      id: album.id,
-      title: album.name,
-      artist: album.artists[0]?.name || "Unknown Artist",
-      image: album.images[0]?.url,
-      previewUrl: null, // Spotify API doesn’t return preview for albums
-    }));
+    // Fetch Tamil genre tracks (limit 24 for clean grid)
+    const res = await fetch(
+      "https://api.spotify.com/v1/search?q=genre%3Atamil&type=track&limit=24",
+      {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      }
+    );
+
+    if (!res.ok) {
+      console.error("Failed to fetch Tamil tracks:", res.statusText);
+      return [];
+    }
+
+    const data = await res.json();
+    return data.tracks?.items || [];
   } catch (err) {
-    console.error("Error fetching new releases:", err);
+    console.error("Error fetching Tamil tracks:", err);
     return [];
   }
 }
 
-// 🔥 Fetch user’s top tracks
-export async function fetchUserTopTracks() {
-  try {
-    const data = await spotifyApi.getMyTopTracks({ limit: 20 });
-    return data.body.items.map((track) => ({
-      id: track.id,
-      title: track.name,
-      artist: track.artists[0]?.name || "Unknown Artist",
-      image: track.album.images[0]?.url,
-      previewUrl: track.preview_url,
-    }));
-  } catch (err) {
-    console.error("Error fetching user top tracks:", err);
-    return [];
-  }
-}
-
-// 🔍 Search tracks by keyword
+/**
+ * 🔍 Search Spotify tracks dynamically (used in Topbar search)
+ */
 export async function searchTracks(query) {
-  if (!query || query.trim() === "") return [];
+  if (!access_token) {
+    console.error("Spotify access token missing for search");
+    return [];
+  }
+
   try {
-    const data = await spotifyApi.searchTracks(query, { limit: 20 });
-    return data.body.tracks.items.map((track) => ({
-      id: track.id,
-      title: track.name,
-      artist: track.artists[0]?.name || "Unknown Artist",
-      image: track.album.images[0]?.url,
-      previewUrl: track.preview_url,
-    }));
+    const res = await fetch(
+      `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=24`,
+      {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      }
+    );
+
+    if (!res.ok) {
+      console.error("Search request failed:", res.statusText);
+      return [];
+    }
+
+    const data = await res.json();
+    return data.tracks?.items || [];
   } catch (err) {
-    console.error("Error searching tracks:", err);
+    console.error("Error searching Spotify:", err);
+    return [];
+  }
+}
+
+/**
+ * 🧩 Optional — Fetch user’s top tracks (for Discover tab, future use)
+ */
+export async function fetchUserTopTracks() {
+  if (!access_token) return [];
+
+  try {
+    const res = await fetch(
+      "https://api.spotify.com/v1/me/top/tracks?time_range=short_term&limit=24",
+      {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      }
+    );
+
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.items || [];
+  } catch (err) {
+    console.error("Error fetching top tracks:", err);
     return [];
   }
 }
