@@ -1,4 +1,5 @@
 // src/lib/spotify.js
+// src/lib/spotify.js
 
 let access_token = null;
 
@@ -10,8 +11,7 @@ export function setAccessToken(token) {
 }
 
 /**
- * 🎵 Fetch Top Tamil Trending Songs (2025)
- * Uses Spotify search API to get Tamil genre tracks
+ * 🎵 Fetch Top Tamil Trending Songs 2025 (Official Spotify Playlist)
  */
 export async function fetchNewReleases() {
   if (!access_token) {
@@ -20,9 +20,9 @@ export async function fetchNewReleases() {
   }
 
   try {
-    // Fetch Tamil genre tracks (limit 24 for clean grid)
+    // ✅ Official Spotify Playlist ID for Tamil Hits 2025
     const res = await fetch(
-      "https://api.spotify.com/v1/search?q=genre%3Atamil&type=track&limit=24",
+      "https://api.spotify.com/v1/playlists/37i9dQZF1DX0VZ88D5XJYW/tracks?limit=24",
       {
         headers: {
           Authorization: `Bearer ${access_token}`,
@@ -31,14 +31,17 @@ export async function fetchNewReleases() {
     );
 
     if (!res.ok) {
-      console.error("Failed to fetch Tamil tracks:", res.statusText);
+      console.error("Failed to fetch Tamil playlist:", res.statusText);
       return [];
     }
 
     const data = await res.json();
-    return data.tracks?.items || [];
+    // Extract valid track data
+    return data.items
+      .filter((item) => item.track)
+      .map((item) => item.track);
   } catch (err) {
-    console.error("Error fetching Tamil tracks:", err);
+    console.error("Error fetching Tamil playlist:", err);
     return [];
   }
 }
@@ -76,7 +79,7 @@ export async function searchTracks(query) {
 }
 
 /**
- * 🧩 Optional — Fetch user’s top tracks (for Discover tab, future use)
+ * 🧩 (Optional) Fetch user's top tracks (for Discover page)
  */
 export async function fetchUserTopTracks() {
   if (!access_token) return [];
@@ -85,9 +88,7 @@ export async function fetchUserTopTracks() {
     const res = await fetch(
       "https://api.spotify.com/v1/me/top/tracks?time_range=short_term&limit=24",
       {
-        headers: {
-          Authorization: `Bearer ${access_token}`,
-        },
+        headers: { Authorization: `Bearer ${access_token}` },
       }
     );
 
