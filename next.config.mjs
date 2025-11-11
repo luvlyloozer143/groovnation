@@ -1,23 +1,21 @@
-// next.config.mjs
 import fs from "fs";
-import path from "path";
 
-/** @type {import('next').NextConfig} */
+const isLocal = process.env.NODE_ENV === "development";
+
 const nextConfig = {
-  // 👇 optional, just keeps your Webpack config valid
-  webpack(config) {
-    return config;
-  },
-
-  // 👇 HTTPS dev server configuration
-  devServer: {
-    https: {
-      key: fs.readFileSync(path.join(process.cwd(), "cert/key.pem")),
-      cert: fs.readFileSync(path.join(process.cwd(), "cert/cert.pem")),
-    },
-    host: "localhost",
-    port: 3000,
-  },
+  ...(isLocal
+    ? {
+        // ✅ Use HTTPS only during local development
+        devServer: {
+          https: {
+            key: fs.readFileSync("./cert/key.pem"),
+            cert: fs.readFileSync("./cert/cert.pem"),
+          },
+        },
+      }
+    : {
+        // ✅ On Vercel (production), run normally (Vercel handles HTTPS)
+      }),
 };
 
 export default nextConfig;
