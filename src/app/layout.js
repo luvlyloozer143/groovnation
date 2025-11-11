@@ -1,10 +1,13 @@
 // src/app/layout.js
 import "../styles/globals.css";
 import "../styles/themes.css";
-import AppWrapper from "@/components/layout/AppWrapper";
-import SessionWrapper from "@/components/SessionWrapper"; // 👈 use your existing one
+import MainShell from "@/components/layout/MainShell";
+import SessionWrapper from "@/components/SessionWrapper"; // ✅ fixed import
 
-export const metadata = { title: "GroovNation" };
+export const metadata = {
+  title: "GroovNation",
+  description: "A dreamy pastel music experience powered by Spotify 🎧",
+};
 
 export default function RootLayout({ children }) {
   return (
@@ -17,12 +20,12 @@ export default function RootLayout({ children }) {
           relative
         "
       >
-        {/* 🎨 Background gradient overlay */}
+        {/* 🎨 Gradient overlay background */}
         <div className="gradient-overlay"></div>
 
-        {/* ✅ Wrap everything inside SessionWrapper (client context) */}
+        {/* ✅ Entire app wrapped with SessionProvider */}
         <SessionWrapper>
-          <AppWrapper>{children}</AppWrapper>
+          <MainShell>{children}</MainShell>
         </SessionWrapper>
       </body>
     </html>
