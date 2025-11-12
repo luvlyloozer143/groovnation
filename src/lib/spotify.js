@@ -3,7 +3,7 @@
 let access_token = null;
 
 /**
- * 🧠 Store access token globally (set by next-auth session)
+ * 🧠 Store Spotify access token (from next-auth session)
  */
 export function setAccessToken(token) {
   access_token = token;
@@ -11,8 +11,8 @@ export function setAccessToken(token) {
 }
 
 /**
- * 🎧 Fetch Tamil Trending Songs using Spotify Browse API (region-safe)
- * Automatically fetches top Tamil playlist for Indian users.
+ * 🎧 Fetch Tamil Trending Songs using Spotify Featured Playlists (region-safe)
+ * Dynamically finds any featured playlist that contains Tamil songs.
  */
 export async function fetchNewReleases() {
   if (!access_token) {
@@ -21,33 +21,42 @@ export async function fetchNewReleases() {
   }
 
   try {
-    // Step 1️⃣ — Get Tamil category playlists (region-safe)
-    const categoryRes = await fetch(
-      `https://api.spotify.com/v1/browse/categories/tamil/playlists?country=IN&limit=1`,
+    console.log("🎧 Fetching featured playlists for India...");
+
+    // 1️⃣ Get featured playlists (region-safe endpoint)
+    const featuredRes = await fetch(
+      `https://api.spotify.com/v1/browse/featured-playlists?country=IN&limit=20`,
       {
         headers: { Authorization: `Bearer ${access_token}` },
       }
     );
 
-    if (!categoryRes.ok) {
-      console.error("❌ Tamil category fetch failed:", categoryRes.status);
-      const errText = await categoryRes.text();
+    if (!featuredRes.ok) {
+      console.error("❌ Featured playlists fetch failed:", featuredRes.status);
+      const errText = await featuredRes.text();
       console.log("Error Response:", errText);
       return [];
     }
 
-    const categoryData = await categoryRes.json();
-    const playlist = categoryData.playlists?.items?.[0];
+    const featuredData = await featuredRes.json();
+    const playlists = featuredData.playlists?.items || [];
 
-    if (!playlist) {
-      console.warn("⚠ No Tamil playlists found in Browse API.");
+    // 2️⃣ Filter playlist related to Tamil
+    const tamilPlaylist = playlists.find(
+      (p) =>
+        p.name.toLowerCase().includes("tamil") ||
+        p.description.toLowerCase().includes("tamil")
+    );
+
+    if (!tamilPlaylist) {
+      console.warn("⚠ No Tamil playlist found in featured playlists.");
       return [];
     }
 
-    const playlistId = playlist.id;
-    console.log("✅ Found Tamil playlist:", playlist.name);
+    const playlistId = tamilPlaylist.id;
+    console.log("✅ Found Tamil playlist:", tamilPlaylist.name);
 
-    // Step 2️⃣ — Fetch songs from the found Tamil playlist
+    // 3️⃣ Fetch the Tamil playlist tracks
     const trackRes = await fetch(
       `https://api.spotify.com/v1/playlists/${playlistId}/tracks?market=IN&limit=24`,
       {
@@ -65,6 +74,7 @@ export async function fetchNewReleases() {
     const data = await trackRes.json();
     console.log("✅ Tamil playlist tracks fetched:", data.items?.length);
 
+    // 4️⃣ Format the track info
     return (
       data.items
         ?.filter((item) => item.track)
@@ -85,7 +95,7 @@ export async function fetchNewReleases() {
 }
 
 /**
- * 🔍 Global Search (Spotify tracks)
+ * 🔍 Search for songs globally (Spotify Search API)
  */
 export async function searchTracks(query) {
   if (!access_token) {
@@ -127,7 +137,7 @@ export async function searchTracks(query) {
 }
 
 /**
- * 💿 User Top Tracks (for Discover page)
+ * 💿 Fetch User's Top Tracks (for Discover Page)
  */
 export async function fetchUserTopTracks() {
   if (!access_token) return [];
