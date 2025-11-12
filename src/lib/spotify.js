@@ -131,27 +131,32 @@ export async function fetchNewReleases() {
   }
 }
 
-// helper: unify track object for UI
+// ✅ FINAL trackToClient fix for image + data issues
 function trackToClient(raw) {
   const track = raw?.track ? raw.track : raw;
+
+  // 🧹 Clean invalid Spotify image URLs
+  const validImage =
+    track.album?.images?.[0]?.url ||
+    track.images?.[0]?.url ||
+    null;
+
+  const cover =
+    validImage && validImage.includes("https://i.scdn.co/image/")
+      ? validImage
+      : "/fallback-cover.png"; // local fallback (add this image in public folder)
 
   return {
     id: track.id || Math.random().toString(36),
     title: track.name || "Unknown Track",
     artist:
-      (track.artists && track.artists.length > 0
-        ? track.artists.map((a) => a.name).join(", ")
-        : "Unknown Artist") || "Unknown Artist",
+      track.artists?.map((a) => a.name).join(", ") || "Unknown Artist",
     album: track.album?.name || "Unknown Album",
-    cover:
-      track.album?.images?.[0]?.url ||
-      track.images?.[0]?.url || // fallback for search tracks
-      "/placeholder.jpg",
+    cover,
     preview: track.preview_url || null,
     external_url: track.external_urls?.spotify || null,
   };
 }
-
 
 /* --- other API helpers (searchTracks, fetchUserTopTracks) unchanged below --- */
 
