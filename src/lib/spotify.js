@@ -131,19 +131,27 @@ export async function fetchNewReleases() {
   }
 }
 
-// helper: unify track object for the client
-function trackToClient(t) {
-  const track = t?.track ? t.track : t; // playlist items may be wrapped
+// helper: unify track object for UI
+function trackToClient(raw) {
+  const track = raw?.track ? raw.track : raw;
+
   return {
-    id: track.id,
-    title: track.name,
-    artist: (track.artists || []).map(a => a.name).join(", "),
-    album: track.album?.name ?? "",
-    cover: track.album?.images?.[0]?.url ?? "/placeholder.jpg",
-    preview: track.preview_url ?? null,
-    external_url: track.external_urls?.spotify ?? null
+    id: track.id || Math.random().toString(36),
+    title: track.name || "Unknown Track",
+    artist:
+      (track.artists && track.artists.length > 0
+        ? track.artists.map((a) => a.name).join(", ")
+        : "Unknown Artist") || "Unknown Artist",
+    album: track.album?.name || "Unknown Album",
+    cover:
+      track.album?.images?.[0]?.url ||
+      track.images?.[0]?.url || // fallback for search tracks
+      "/placeholder.jpg",
+    preview: track.preview_url || null,
+    external_url: track.external_urls?.spotify || null,
   };
 }
+
 
 /* --- other API helpers (searchTracks, fetchUserTopTracks) unchanged below --- */
 
