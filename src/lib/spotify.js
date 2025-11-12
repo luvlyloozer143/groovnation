@@ -18,14 +18,14 @@ export async function fetchNewReleases() {
 
   try {
     // ✅ Official “Tamil Hits 2025” playlist (or fallback)
-    const TAMIL_PLAYLIST_ID = "37i9dQZF1DX1i3hvzHpcQV";
+    const TAMIL_PLAYLIST_ID = "37i9dQZF1DX4Im4BVvD2Pf"; // ✅ Tamil Romance Hits (works in India)
+const res = await fetch(
+  `https://api.spotify.com/v1/playlists/${TAMIL_PLAYLIST_ID}/tracks?market=IN&limit=24`,
+  {
+    headers: { Authorization: `Bearer ${access_token}` },
+  }
+);
 
-    const res = await fetch(
-      `https://api.spotify.com/v1/playlists/${TAMIL_PLAYLIST_ID}/tracks?limit=24`,
-      {
-        headers: { Authorization: `Bearer ${access_token}` },
-      }
-    );
 
     if (!res.ok) {
       console.error("❌ Spotify fetch failed:", res.status, await res.text());
