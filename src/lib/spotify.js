@@ -18,7 +18,7 @@ export async function fetchNewReleases() {
 
   try {
     // ✅ Official “Tamil Hits 2025” playlist (or fallback)
-    const TAMIL_PLAYLIST_ID = "37i9dQZF1DX9qNcUS2b2o2";
+    const TAMIL_PLAYLIST_ID = "37i9dQZF1DX1i3hvzHpcQV";
 
     const res = await fetch(
       `https://api.spotify.com/v1/playlists/${TAMIL_PLAYLIST_ID}/tracks?limit=24`,
