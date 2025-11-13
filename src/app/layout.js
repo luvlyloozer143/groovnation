@@ -1,9 +1,7 @@
-"use client";
-
 import "../styles/globals.css";
 import "../styles/themes.css";
-import MainShell from "@/components/layout/MainShell";
-import SessionWrapper from "@/components/SessionWrapper";
+
+import ClientLayout from "@/components/ClientLayout"; // NEW WRAPPER
 
 export const metadata = {
   title: "GroovNation",
@@ -23,9 +21,8 @@ export default function RootLayout({ children }) {
       >
         <div className="gradient-overlay"></div>
 
-        <SessionWrapper>
-          <MainShell>{children}</MainShell>
-        </SessionWrapper>
+        {/* Client-only provider wrapper */}
+        <ClientLayout>{children}</ClientLayout>
       </body>
     </html>
   );
