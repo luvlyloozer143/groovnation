@@ -1,28 +1,25 @@
-import "@/styles/globals.css";
-import { Inter } from "next/font/google";
+// src/app/layout.js
+import "./globals.css";
+import { Poppins } from "next/font/google";
 import SessionWrapper from "@/components/SessionWrapper";
-import LeftSidebar from "@/components/layout/LeftSidebar";
-import Topbar from "@/components/layout/Topbar";
-import RightSidebar from "@/components/layout/RightSidebar";
-import Playerbar from "@/components/layout/Playerbar";
+import AppWrapper from "@/components/layout/AppWrapper";
 
-const inter = Inter({ subsets: ["latin"] });
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+});
 
 export const metadata = {
   title: "GroovNation",
-  description: "Modern Music App",
+  description: "Modern Music Player App",
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="en" className="scroll-smooth">
+      <body className={`${poppins.className} bg-white dark:bg-black`}>
         <SessionWrapper>
-          <Topbar />
-          <LeftSidebar />
-          <RightSidebar />
-          <main className="pt-20 pb-20 px-6">{children}</main>
-          <Playerbar />
+          <AppWrapper>{children}</AppWrapper>
         </SessionWrapper>
       </body>
     </html>

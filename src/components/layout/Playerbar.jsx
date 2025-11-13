@@ -1,57 +1,83 @@
 // src/components/layout/Playerbar.jsx
 "use client";
 
-import { Play, SkipBack, SkipForward, ListMusic } from "lucide-react";
+import { usePlayerStore } from "@/lib/store";
 import { motion } from "framer-motion";
-import { useUIStore } from "@/lib/store";
+import { Play, Pause, SkipBack, SkipForward, Shuffle, Repeat } from "lucide-react";
 
 export default function Playerbar() {
-  const toggleQueue = useUIStore((s) => s.toggleQueue);
+  const {
+    queue,
+    currentIndex,
+    isPlaying,
+    togglePlay,
+    nextSong,
+    prevSong,
+    shuffle,
+    toggleShuffle,
+    repeat,
+    toggleRepeat,
+  } = usePlayerStore();
+
+  const current = queue[currentIndex];
 
   return (
-    <footer
-      className="fixed bottom-0 left-0 right-0 z-40 frost-glass
-      backdrop-blur-2xl border-0 shadow-lg flex items-center justify-center 
-      gap-10 py-4 px-6"
-    >
-      {/* 🎼 Queue Button */}
-      <motion.button
-        whileHover={{ scale: 1.2 }}
-        whileTap={{ scale: 0.9 }}
-        onClick={toggleQueue}
-        className="hover-contrast rounded-full p-2 motion-pop"
-      >
-        <ListMusic className="w-6 h-6" />
-      </motion.button>
+    <footer className="fixed bottom-0 left-0 right-0 z-40 bg-white/20 dark:bg-black/30 backdrop-blur-2xl shadow-lg border-t border-white/10 px-6 py-3 flex items-center justify-between">
+      
+      {/* 🎵 LEFT — Song Info */}
+      <div className="flex items-center gap-4">
+        {current && (
+          <>
+            <img
+              src={current.cover}
+              className="w-12 h-12 rounded-md object-cover shadow-md"
+            />
+            <div>
+              <p className="text-sm font-semibold">{current.title}</p>
+              <p className="text-xs opacity-70">{current.artist}</p>
+            </div>
+          </>
+        )}
+      </div>
 
-      {/* ⏮ Previous */}
-      <motion.button
-        whileHover={{ scale: 1.2 }}
-        whileTap={{ scale: 0.9 }}
-        className="hover-contrast rounded-full p-2 motion-pop"
-      >
-        <SkipBack className="w-6 h-6" />
-      </motion.button>
+      {/* 🎧 CENTER — Controls */}
+      <div className="flex items-center gap-6">
+        <button onClick={toggleShuffle} className={shuffle ? "text-purple-500" : "opacity-60"}>
+          <Shuffle />
+        </button>
 
-      {/* ▶ Play Button */}
-      <motion.button
-        whileHover={{ scale: 1.15 }}
-        whileTap={{ scale: 0.9 }}
-        className="relative rounded-full w-14 h-14 flex items-center justify-center
-        bg-gradient-to-br from-[#95eaff] via-[#bda0ff] to-[#ffdde1]
-        shadow-[0_0_20px_rgba(164,124,255,0.4)] motion-pop"
-      >
-        <Play className="w-7 h-7 text-white" />
-      </motion.button>
+        <button onClick={prevSong}>
+          <SkipBack />
+        </button>
 
-      {/* ⏭ Next */}
-      <motion.button
-        whileHover={{ scale: 1.2 }}
-        whileTap={{ scale: 0.9 }}
-        className="hover-contrast rounded-full p-2 motion-pop"
-      >
-        <SkipForward className="w-6 h-6" />
-      </motion.button>
+        <motion.button
+          onClick={togglePlay}
+          whileTap={{ scale: 0.9 }}
+          className="bg-purple-500 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-md"
+        >
+          {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
+        </motion.button>
+
+        <button onClick={nextSong}>
+          <SkipForward />
+        </button>
+
+        <button
+          onClick={toggleRepeat}
+          className={
+            repeat === "one"
+              ? "text-blue-500"
+              : repeat === "all"
+              ? "text-green-500"
+              : "opacity-60"
+          }
+        >
+          <Repeat />
+        </button>
+      </div>
+
+      {/* RIGHT — Empty for now */}
+      <div className="w-12" />
     </footer>
   );
 }

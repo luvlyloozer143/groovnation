@@ -1,28 +1,26 @@
 // src/components/layout/RightSidebar.jsx
 "use client";
 
-import { motion } from "framer-motion";
-import { useUIStore } from "@/lib/store";
+import { usePlayerStore } from "@/lib/store";
 
 export default function RightSidebar() {
-  const queueOpen = useUIStore((s) => s.queueOpen);
+  const { queue, currentIndex, playAtIndex } = usePlayerStore();
 
   return (
-    <motion.aside
-      initial={{ x: 350 }}
-      animate={{ x: queueOpen ? 0 : 350 }}
-      transition={{ type: "spring", stiffness: 180, damping: 22 }}
-      className="
-        fixed top-16 right-0 h-[calc(100vh-4rem)]
-        w-[320px] frost-glass backdrop-blur-xl
-        shadow-xl border-l border-white/10 z-40 p-5
-      "
-    >
-      <h2 className="text-xl font-bold mb-4">🎶 Up Next</h2>
+    <aside className="fixed top-16 right-0 w-64 h-[calc(100vh-4rem)] bg-white/20 dark:bg-black/30 backdrop-blur-xl shadow-xl p-4 overflow-y-auto hidden lg:block">
+      <h2 className="text-lg font-bold mb-4">Next in Queue</h2>
 
-      <div className="space-y-4 text-sm opacity-80">
-        <p>Queue feature coming soon… 🔥</p>
-      </div>
-    </motion.aside>
+      {queue.map((track, index) => (
+        <div
+          key={track.id}
+          className={`p-2 rounded-lg cursor-pointer mb-2 transition
+            ${index === currentIndex ? "bg-purple-300/40 shadow" : "hover:bg-white/10"}`}
+          onClick={() => playAtIndex(index)}
+        >
+          <p className="text-sm font-semibold truncate">{track.title}</p>
+          <p className="text-xs opacity-70 truncate">{track.artist}</p>
+        </div>
+      ))}
+    </aside>
   );
 }
