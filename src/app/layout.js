@@ -1,5 +1,5 @@
 // src/app/layout.js
-import "./globals.css";
+import "@/styles/globals.css";
 import { Poppins } from "next/font/google";
 import SessionWrapper from "@/components/SessionWrapper";
 import AppWrapper from "@/components/layout/AppWrapper";
