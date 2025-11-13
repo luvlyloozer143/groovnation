@@ -3,15 +3,40 @@
 
 import { create } from "zustand";
 
+// -------------------------------
+// 🎛 UI Store (Sidebar + Theme)
+// -------------------------------
+export const useUIStore = create((set) => ({
+  sidebarCollapsed: false,
+  toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
+
+  theme: "light",
+  setTheme: (theme) => set({ theme }),
+}));
+
+// -------------------------------
+// 🌓 Sync Theme With <html>
+// -------------------------------
+export const useThemeSync = () => {
+  const theme = useUIStore((s) => s.theme);
+
+  // Sync to HTML attribute
+  if (typeof document !== "undefined") {
+    document.documentElement.className = theme;
+  }
+};
+
+// -------------------------------
+// 🎵 Player Store (Your Code)
+// -------------------------------
 export const usePlayerStore = create((set, get) => ({
-  queue: [],            // list of songs
-  currentIndex: 0,      // position in queue
+  queue: [],
+  currentIndex: 0,
   isPlaying: false,
   shuffle: false,
-  repeat: "off",        // off | one | all
+  repeat: "off",
   audio: null,
 
-  // 🎵 Load queue & start from index
   setQueue: (songs, startIndex = 0) => {
     const audio = new Audio(songs[startIndex]?.preview || "");
 
@@ -25,7 +50,6 @@ export const usePlayerStore = create((set, get) => ({
     });
   },
 
-  // ▶ Play / Pause
   togglePlay: () => {
     const { audio, isPlaying } = get();
     if (!audio) return;
@@ -36,7 +60,6 @@ export const usePlayerStore = create((set, get) => ({
     set({ isPlaying: !isPlaying });
   },
 
-  // ⏭ Next Song
   nextSong: () => {
     const { queue, currentIndex, shuffle, repeat } = get();
     if (queue.length === 0) return;
@@ -47,13 +70,12 @@ export const usePlayerStore = create((set, get) => ({
       nextIndex = Math.floor(Math.random() * queue.length);
     } else if (nextIndex >= queue.length) {
       if (repeat === "all") nextIndex = 0;
-      else return; // stop at end
+      else return;
     }
 
     get().playAtIndex(nextIndex);
   },
 
-  // ⏮ Previous Song
   prevSong: () => {
     const { queue, currentIndex } = get();
     if (queue.length === 0) return;
@@ -62,14 +84,13 @@ export const usePlayerStore = create((set, get) => ({
     get().playAtIndex(prevIndex);
   },
 
-  // 🎯 Play specific index
   playAtIndex: (index) => {
     const { queue, audio } = get();
     if (!queue[index]) return;
 
     if (audio) audio.pause();
 
-    const newAudio = new Audio(queue[index].preview || "");
+    const newAudio = new Audio(queue[index]?.preview || "");
     newAudio.onended = () => get().handleSongEnd();
 
     set({
@@ -81,9 +102,8 @@ export const usePlayerStore = create((set, get) => ({
     newAudio.play();
   },
 
-  // 🔁 Repeat + Auto-next logic
   handleSongEnd: () => {
-    const { repeat, currentIndex, queue } = get();
+    const { repeat, currentIndex } = get();
 
     if (repeat === "one") {
       get().playAtIndex(currentIndex);
@@ -92,12 +112,11 @@ export const usePlayerStore = create((set, get) => ({
     get().nextSong();
   },
 
-  // 🔀 Shuffle toggle
-  toggleShuffle: () => {
-    set((s) => ({ shuffle: !s.shuffle }));
-  },
+  toggleShuffle: () =>
+    set((s) => ({
+      shuffle: !s.shuffle,
+    })),
 
-  // 🔁 Repeat cycle
   toggleRepeat: () => {
     const cycle = { off: "one", one: "all", all: "off" };
     set((s) => ({ repeat: cycle[s.repeat] }));
