@@ -1,4 +1,4 @@
-import "./globals.css";
+import "@/styles/globals.css";
 import { Inter } from "next/font/google";
 import SessionWrapper from "@/components/SessionWrapper";
 import LeftSidebar from "@/components/layout/LeftSidebar";
