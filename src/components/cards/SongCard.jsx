@@ -9,21 +9,21 @@ export default function SongCard({ song }) {
 
   const handlePlayPause = () => {
     if (!song.preview) return;
-    if (isPlaying) {
-      audioRef.current.pause();
-    } else {
-      audioRef.current.play();
-    }
+    if (isPlaying) audioRef.current.pause();
+    else audioRef.current.play();
     setIsPlaying(!isPlaying);
   };
 
   return (
     <motion.div
-      className="w-44 sm:w-52 bg-white/10 dark:bg-black/30 backdrop-blur-xl rounded-2xl p-3 flex flex-col items-center text-center shadow-md hover:shadow-purple-400/20 transition-all duration-300"
+      className="w-44 sm:w-52 bg-white/10 dark:bg-black/30
+      backdrop-blur-xl rounded-2xl p-3 flex flex-col items-center
+      text-center shadow-md hover:shadow-purple-400/20
+      transition-all duration-300"
       whileHover={{ scale: 1.03 }}
       transition={{ type: "spring", stiffness: 220, damping: 18 }}
     >
-      {/* 🎵 Album Cover */}
+      {/* Album Cover */}
       <div
         className="relative w-full h-48 sm:h-52 rounded-xl overflow-hidden mb-3 group cursor-pointer"
         onClick={handlePlayPause}
@@ -32,10 +32,11 @@ export default function SongCard({ song }) {
           src={song.cover || "/fallback-cover.png"}
           alt={song.title || "Unknown Track"}
           fill
-          className="object-cover rounded-xl group-hover:scale-105 transition-transform duration-300"
+          className="object-cover rounded-xl group-hover:scale-105
+          transition-transform duration-300"
         />
 
-        {/* 🎯 Slide-up Play Button */}
+        {/* Slide-up Play Button */}
         <motion.div
           className="absolute inset-0 flex items-end justify-center opacity-0 group-hover:opacity-100"
           initial={{ y: 30, opacity: 0 }}
@@ -59,27 +60,22 @@ export default function SongCard({ song }) {
                 fill="white"
                 viewBox="0 0 24 24"
                 strokeWidth={1.5}
-                stroke="none"
                 className="w-6 h-6 ml-1"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M5.25 5.25v13.5l13.5-6.75-13.5-6.75z"
-                />
+                <path d="M5 4l15 8-15 8z" />
               </svg>
             )}
           </motion.div>
         </motion.div>
       </div>
 
-      {/* 🎶 Song Title */}
-      <h3 className="text-sm font-semibold text-black truncate w-full px-1">
+      {/* Title */}
+      <h3 className="text-sm font-semibold text-black dark:text-white truncate w-full px-1">
         {song.title || "Unknown Track"}
       </h3>
 
-      {/* 👤 Artist */}
-      <p className="text-xs text-gray-600 truncate w-full px-1">
+      {/* Artist */}
+      <p className="text-xs text-gray-600 dark:text-gray-300 truncate w-full px-1">
         {song.artist || "Unknown Artist"}
       </p>
 

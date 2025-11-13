@@ -1,56 +1,57 @@
 // src/components/layout/Playerbar.jsx
-"use client"
+"use client";
 
-import { Play, SkipBack, SkipForward } from "lucide-react"
-import { motion } from "framer-motion"
+import { Play, SkipBack, SkipForward, ListMusic } from "lucide-react";
+import { motion } from "framer-motion";
+import { useUIStore } from "@/lib/store";
 
 export default function Playerbar() {
+  const toggleQueue = useUIStore((s) => s.toggleQueue);
+
   return (
     <footer
       className="fixed bottom-0 left-0 right-0 z-40 frost-glass
-      backdrop-blur-2xl border-0 shadow-lg
-      flex items-center justify-center gap-8 py-3
-      transition-all duration-500 motion-fade"
+      backdrop-blur-2xl border-0 shadow-lg flex items-center justify-center 
+      gap-10 py-4 px-6"
     >
+      {/* 🎼 Queue Button */}
+      <motion.button
+        whileHover={{ scale: 1.2 }}
+        whileTap={{ scale: 0.9 }}
+        onClick={toggleQueue}
+        className="hover-contrast rounded-full p-2 motion-pop"
+      >
+        <ListMusic className="w-6 h-6" />
+      </motion.button>
+
       {/* ⏮ Previous */}
       <motion.button
         whileHover={{ scale: 1.2 }}
-        whileTap={{ scale: 0.95 }}
+        whileTap={{ scale: 0.9 }}
         className="hover-contrast rounded-full p-2 motion-pop"
       >
-        <SkipBack className="w-5 h-5" />
+        <SkipBack className="w-6 h-6" />
       </motion.button>
 
-      {/* ▶ Play / Pause */}
+      {/* ▶ Play Button */}
       <motion.button
         whileHover={{ scale: 1.15 }}
         whileTap={{ scale: 0.9 }}
-        className="relative rounded-full w-12 h-12 flex items-center justify-center
+        className="relative rounded-full w-14 h-14 flex items-center justify-center
         bg-gradient-to-br from-[#95eaff] via-[#bda0ff] to-[#ffdde1]
-        shadow-[0_0_15px_rgba(164,124,255,0.4)] motion-pop"
+        shadow-[0_0_20px_rgba(164,124,255,0.4)] motion-pop"
       >
-        <Play className="w-6 h-6 text-white drop-shadow-md" />
-
-        {/* ✨ Pulse Glow Animation */}
-        <motion.span
-          className="absolute inset-0 rounded-full bg-gradient-to-br from-[#95eaff] via-[#a47cff] to-[#ffdde1] opacity-40 blur-lg"
-          animate={{ scale: [1, 1.25, 1], opacity: [0.5, 0.2, 0.5] }}
-          transition={{
-            duration: 2.4,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
+        <Play className="w-7 h-7 text-white" />
       </motion.button>
 
       {/* ⏭ Next */}
       <motion.button
         whileHover={{ scale: 1.2 }}
-        whileTap={{ scale: 0.95 }}
+        whileTap={{ scale: 0.9 }}
         className="hover-contrast rounded-full p-2 motion-pop"
       >
-        <SkipForward className="w-5 h-5" />
+        <SkipForward className="w-6 h-6" />
       </motion.button>
     </footer>
-  )
+  );
 }

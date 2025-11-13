@@ -6,12 +6,22 @@ import { useEffect } from "react";
 export const useUIStore = create((set) => ({
   sidebarCollapsed: false,
   darkMode: false,
-  onSearch: null, // 🔥 global search handler placeholder
+
+  // ⚡ NEW — Queue sidebar state
+  queueOpen: false,
+
+  onSearch: null,
 
   // actions
-  toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
+  toggleSidebar: () =>
+    set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
+
   toggleTheme: () => set((s) => ({ darkMode: !s.darkMode })),
-  setOnSearch: (callback) => set({ onSearch: callback }), // 🔥 setter for global search
+
+  toggleQueue: () =>
+    set((s) => ({ queueOpen: !s.queueOpen })), // ⚡ NEW
+
+  setOnSearch: (callback) => set({ onSearch: callback }),
 }));
 
 // 🌙 Sync theme mode with <html> element
