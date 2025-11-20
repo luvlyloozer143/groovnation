@@ -2,24 +2,16 @@
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { usePlayerStore } from "@/lib/store";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
 
 export default function SongCard({ song }) {
-  const router = useRouter();
-  const [hover, setHover] = useState(false);
-
   const player = usePlayerStore.getState();
 
-  const handleGlobalPlay = (e) => {
-    e.stopPropagation();
+  const playGlobal = () => {
+    if (!song) return;
 
-    // 🟣 1. Set this song as queue + start playback
+    // Global player queue (this song only)
     player.setQueue([song], 0);
     player.playAtIndex(0);
-
-    // 🟣 2. (Optional) If you want redirect:
-    // router.push(`/song/${song.id}`);
   };
 
   return (
@@ -30,13 +22,11 @@ export default function SongCard({ song }) {
         hover:shadow-purple-400/20 transition-all duration-300
       "
       whileHover={{ scale: 1.03 }}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
     >
-      {/* 🎵 Album Cover */}
+      {/* COVER */}
       <div
         className="relative w-full h-48 sm:h-52 rounded-xl overflow-hidden mb-3 group cursor-pointer"
-        onClick={handleGlobalPlay}
+        onClick={playGlobal}
       >
         <Image
           src={song.cover || "/fallback-cover.png"}
@@ -45,23 +35,15 @@ export default function SongCard({ song }) {
           className="object-cover rounded-xl group-hover:scale-105 transition-transform duration-300"
         />
 
-        {/* ▶ Play Button (Slide Up) */}
+        {/* Button */}
         <motion.div
           className="absolute inset-0 flex items-center justify-center"
           initial={{ opacity: 0, y: 60 }}
-          animate={{
-            opacity: hover ? 1 : 0,
-            y: hover ? 0 : 60,
-          }}
-          transition={{ duration: 0.35, ease: "easeOut" }}
+          animate={{ opacity: 1, y: 0 }}
+          whileHover={{ opacity: 1 }}
+          transition={{ duration: 0.35 }}
         >
-          <motion.div
-            whileHover={{ scale: 1.15 }}
-            className="
-              bg-black/80 rounded-full w-14 h-14 
-              flex items-center justify-center shadow-xl
-            "
-          >
+          <div className="bg-black/80 rounded-full w-14 h-14 flex items-center justify-center shadow-xl">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="white"
@@ -71,17 +53,16 @@ export default function SongCard({ song }) {
             >
               <path d="M5 3l14 9-14 9V3z" />
             </svg>
-          </motion.div>
+          </div>
         </motion.div>
       </div>
 
-      {/* 🎶 Song Title */}
-      <h3 className="text-sm font-semibold text-black dark:text-white truncate w-full px-1">
+      {/* Text */}
+      <h3 className="text-sm font-semibold truncate w-full text-black dark:text-white">
         {song.title}
       </h3>
 
-      {/* 👤 Artist */}
-      <p className="text-xs text-gray-600 dark:text-gray-300 truncate w-full px-1">
+      <p className="text-xs opacity-70 truncate w-full">
         {song.artist}
       </p>
     </motion.div>

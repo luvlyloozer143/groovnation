@@ -1,26 +1,24 @@
-// src/lib/store.js
 "use client";
-
 import { create } from "zustand";
 
 /* ---------------------------------------------------
-   🎛 UI STORE (sidebar + theme + search FIXED)
+   🎛 UI STORE
 ---------------------------------------------------- */
 export const useUIStore = create((set) => ({
   sidebarCollapsed: false,
-  toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
+  toggleSidebar: () =>
+    set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
 
-  // THEME (old GroovNation logic)
   darkMode: false,
 
   toggleTheme: () =>
     set((s) => {
-      const newVal = !s.darkMode;
+      const next = !s.darkMode;
       if (typeof window !== "undefined") {
-        document.documentElement.classList.toggle("dark", newVal);
-        localStorage.setItem("theme", newVal ? "dark" : "light");
+        document.documentElement.classList.toggle("dark", next);
+        localStorage.setItem("theme", next ? "dark" : "light");
       }
-      return { darkMode: newVal };
+      return { darkMode: next };
     }),
 
   loadTheme: () => {
@@ -32,24 +30,13 @@ export const useUIStore = create((set) => ({
     }
   },
 
-  /* 🔍 SEARCH HANDLER (MISSING BEFORE — NOW FIXED) */
+  // SEARCH sync
   onSearch: null,
-  setOnSearch: (fn) => set({ onSearch: fn }),
+  setOnSearch: (cb) => set({ onSearch: cb }),
 }));
 
 /* ---------------------------------------------------
-   🌓 Sync Theme
----------------------------------------------------- */
-export const useThemeSync = () => {
-  const theme = useUIStore((s) => s.darkMode);
-
-  if (typeof document !== "undefined") {
-    document.documentElement.classList.toggle("dark", theme);
-  }
-};
-
-/* ---------------------------------------------------
-   🎵 PLAYER STORE (unchanged — DO NOT TOUCH)
+   🎵 PLAYER STORE
 ---------------------------------------------------- */
 export const usePlayerStore = create((set, get) => ({
   queue: [],
@@ -59,45 +46,16 @@ export const usePlayerStore = create((set, get) => ({
   repeat: "off",
   audio: null,
 
-  setQueue: (songs, startIndex = 0) => {
-    const audio = new Audio(songs[startIndex]?.preview || "");
+  setQueue: (songs, index = 0) => {
+    const audio = new Audio(songs[index]?.preview || "");
     audio.onended = () => get().handleSongEnd();
 
     set({
       queue: songs,
-      currentIndex: startIndex,
+      currentIndex: index,
       audio,
       isPlaying: false,
     });
-  },
-
-  togglePlay: () => {
-    const { audio, isPlaying } = get();
-    if (!audio) return;
-    isPlaying ? audio.pause() : audio.play();
-    set({ isPlaying: !isPlaying });
-  },
-
-  nextSong: () => {
-    const { queue, currentIndex, shuffle, repeat } = get();
-    if (queue.length === 0) return;
-
-    let nextIndex = currentIndex + 1;
-
-    if (shuffle) nextIndex = Math.floor(Math.random() * queue.length);
-    else if (nextIndex >= queue.length) {
-      if (repeat === "all") nextIndex = 0;
-      else return;
-    }
-    get().playAtIndex(nextIndex);
-  },
-
-  prevSong: () => {
-    const { queue, currentIndex } = get();
-    if (queue.length === 0) return;
-    const prevIndex =
-      currentIndex === 0 ? queue.length - 1 : currentIndex - 1;
-    get().playAtIndex(prevIndex);
   },
 
   playAtIndex: (index) => {
@@ -105,6 +63,7 @@ export const usePlayerStore = create((set, get) => ({
     if (!queue[index]) return;
 
     if (audio) audio.pause();
+
     const newAudio = new Audio(queue[index]?.preview || "");
     newAudio.onended = () => get().handleSongEnd();
 
@@ -117,16 +76,27 @@ export const usePlayerStore = create((set, get) => ({
     newAudio.play();
   },
 
-  handleSongEnd: () => {
-    const { repeat, currentIndex } = get();
-    if (repeat === "one") return get().playAtIndex(currentIndex);
-    get().nextSong();
+  togglePlay: () => {
+    const { audio, isPlaying } = get();
+    if (!audio) return;
+    isPlaying ? audio.pause() : audio.play();
+    set({ isPlaying: !isPlaying });
   },
 
-  toggleShuffle: () => set((s) => ({ shuffle: !s.shuffle })),
+  nextSong: () => {
+    const { queue, currentIndex } = get();
+    if (queue.length <= 1) return;
+    get().playAtIndex((currentIndex + 1) % queue.length);
+  },
 
-  toggleRepeat: () => {
-    const cycle = { off: "one", one: "all", all: "off" };
-    set((s) => ({ repeat: cycle[s.repeat] }));
+  prevSong: () => {
+    const { queue, currentIndex } = get();
+    if (queue.length <= 1) return;
+    const prev = currentIndex === 0 ? queue.length - 1 : currentIndex - 1;
+    get().playAtIndex(prev);
+  },
+
+  handleSongEnd: () => {
+    get().nextSong();
   },
 }));
