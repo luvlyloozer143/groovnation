@@ -4,7 +4,7 @@
 import { create } from "zustand";
 
 /* ---------------------------------------------------
-   🎛 UI STORE (sidebar + theme)
+   🎛 UI STORE (sidebar + theme + search FIXED)
 ---------------------------------------------------- */
 export const useUIStore = create((set) => ({
   sidebarCollapsed: false,
@@ -31,6 +31,10 @@ export const useUIStore = create((set) => ({
       set({ darkMode: isDark });
     }
   },
+
+  /* 🔍 SEARCH HANDLER (MISSING BEFORE — NOW FIXED) */
+  onSearch: null,
+  setOnSearch: (fn) => set({ onSearch: fn }),
 }));
 
 /* ---------------------------------------------------
@@ -79,6 +83,7 @@ export const usePlayerStore = create((set, get) => ({
     if (queue.length === 0) return;
 
     let nextIndex = currentIndex + 1;
+
     if (shuffle) nextIndex = Math.floor(Math.random() * queue.length);
     else if (nextIndex >= queue.length) {
       if (repeat === "all") nextIndex = 0;
