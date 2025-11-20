@@ -3,32 +3,50 @@
 
 import { create } from "zustand";
 
-// -------------------------------
-// 🎛 UI Store (Sidebar + Theme)
-// -------------------------------
+/* ---------------------------------------------------
+   🎛 UI STORE (sidebar + theme)
+---------------------------------------------------- */
 export const useUIStore = create((set) => ({
   sidebarCollapsed: false,
   toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
 
-  theme: "light",
-  setTheme: (theme) => set({ theme }),
+  // THEME (old GroovNation logic)
+  darkMode: false,
+
+  toggleTheme: () =>
+    set((s) => {
+      const newVal = !s.darkMode;
+      if (typeof window !== "undefined") {
+        document.documentElement.classList.toggle("dark", newVal);
+        localStorage.setItem("theme", newVal ? "dark" : "light");
+      }
+      return { darkMode: newVal };
+    }),
+
+  loadTheme: () => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("theme");
+      const isDark = saved === "dark";
+      document.documentElement.classList.toggle("dark", isDark);
+      set({ darkMode: isDark });
+    }
+  },
 }));
 
-// -------------------------------
-// 🌓 Sync Theme With <html>
-// -------------------------------
+/* ---------------------------------------------------
+   🌓 Sync Theme
+---------------------------------------------------- */
 export const useThemeSync = () => {
-  const theme = useUIStore((s) => s.theme);
+  const theme = useUIStore((s) => s.darkMode);
 
-  // Sync to HTML attribute
   if (typeof document !== "undefined") {
-    document.documentElement.className = theme;
+    document.documentElement.classList.toggle("dark", theme);
   }
 };
 
-// -------------------------------
-// 🎵 Player Store (Your Code)
-// -------------------------------
+/* ---------------------------------------------------
+   🎵 PLAYER STORE (unchanged — DO NOT TOUCH)
+---------------------------------------------------- */
 export const usePlayerStore = create((set, get) => ({
   queue: [],
   currentIndex: 0,
@@ -39,7 +57,6 @@ export const usePlayerStore = create((set, get) => ({
 
   setQueue: (songs, startIndex = 0) => {
     const audio = new Audio(songs[startIndex]?.preview || "");
-
     audio.onended = () => get().handleSongEnd();
 
     set({
@@ -53,10 +70,7 @@ export const usePlayerStore = create((set, get) => ({
   togglePlay: () => {
     const { audio, isPlaying } = get();
     if (!audio) return;
-
-    if (isPlaying) audio.pause();
-    else audio.play();
-
+    isPlaying ? audio.pause() : audio.play();
     set({ isPlaying: !isPlaying });
   },
 
@@ -65,22 +79,19 @@ export const usePlayerStore = create((set, get) => ({
     if (queue.length === 0) return;
 
     let nextIndex = currentIndex + 1;
-
-    if (shuffle) {
-      nextIndex = Math.floor(Math.random() * queue.length);
-    } else if (nextIndex >= queue.length) {
+    if (shuffle) nextIndex = Math.floor(Math.random() * queue.length);
+    else if (nextIndex >= queue.length) {
       if (repeat === "all") nextIndex = 0;
       else return;
     }
-
     get().playAtIndex(nextIndex);
   },
 
   prevSong: () => {
     const { queue, currentIndex } = get();
     if (queue.length === 0) return;
-
-    const prevIndex = currentIndex === 0 ? queue.length - 1 : currentIndex - 1;
+    const prevIndex =
+      currentIndex === 0 ? queue.length - 1 : currentIndex - 1;
     get().playAtIndex(prevIndex);
   },
 
@@ -89,7 +100,6 @@ export const usePlayerStore = create((set, get) => ({
     if (!queue[index]) return;
 
     if (audio) audio.pause();
-
     const newAudio = new Audio(queue[index]?.preview || "");
     newAudio.onended = () => get().handleSongEnd();
 
@@ -104,18 +114,11 @@ export const usePlayerStore = create((set, get) => ({
 
   handleSongEnd: () => {
     const { repeat, currentIndex } = get();
-
-    if (repeat === "one") {
-      get().playAtIndex(currentIndex);
-      return;
-    }
+    if (repeat === "one") return get().playAtIndex(currentIndex);
     get().nextSong();
   },
 
-  toggleShuffle: () =>
-    set((s) => ({
-      shuffle: !s.shuffle,
-    })),
+  toggleShuffle: () => set((s) => ({ shuffle: !s.shuffle })),
 
   toggleRepeat: () => {
     const cycle = { off: "one", one: "all", all: "off" };
