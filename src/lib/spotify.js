@@ -75,3 +75,55 @@ export async function searchTracks(query) {
     return [];
   }
 }
+
+/* ============================================================
+   ⭐ NEW — Recommended Songs (Based on Artist ID)
+============================================================ */
+export async function fetchRecommendations(artistId) {
+  if (!access_token || !artistId) return [];
+
+  try {
+    // First: get related artists
+    const rel = await fetch(
+      `https://api.spotify.com/v1/artists/${artistId}/related-artists`,
+      { headers: { Authorization: `Bearer ${access_token}` } }
+    );
+
+    if (!rel.ok) return [];
+
+    const data = await rel.json();
+    const artists = data.artists.slice(0, 5).map((a) => a.id); // Top 5 similar artists
+
+    let finalSongs = [];
+
+    // Now fetch a few top tracks from each similar artist
+    for (const id of artists) {
+      const top = await fetch(
+        `https://api.spotify.com/v1/artists/${id}/top-tracks?market=IN`,
+        { headers: { Authorization: `Bearer ${access_token}` } }
+      );
+
+      if (!top.ok) continue;
+
+      const topData = await top.json();
+
+      finalSongs.push(
+        ...topData.tracks
+          .filter((t) => t.album?.images?.[0]?.url)
+          .map((t) => ({
+            id: t.id,
+            title: t.name,
+            artist: t.artists.map((a) => a.name).join(", "),
+            cover: t.album.images[0].url,
+            preview: t.preview_url,
+            external_url: t.external_urls.spotify,
+          }))
+      );
+    }
+
+    return finalSongs.slice(0, 12); // return max 12 recommendations
+  } catch (err) {
+    console.error("Recommendation fetch error:", err);
+    return [];
+  }
+}
