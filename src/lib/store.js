@@ -46,21 +46,28 @@ export const useThemeSync = () => {
 };
 
 /* ---------------------------------------------------
-   🎵 PLAYER STORE (YOUTUBE LOGIC)
+   🎵 PLAYER STORE (YOUTUBE + OVERLAY)
 ---------------------------------------------------- */
 export const usePlayerStore = create((set, get) => ({
   queue: [],
   currentIndex: 0,
   isPlaying: false,
 
-  // ⭐ YOUTUBE
+  /* ⭐ YOUTUBE SUPPORT */
   videoId: null,
   setVideoId: (id) => set({ videoId: id }),
 
   playerRef: null,
   setPlayerRef: (ref) => set({ playerRef: ref }),
 
-  // Queue
+  /* ⭐ BIG CARD OVERLAY SUPPORT */
+  showBigCard: false,
+  setShowBigCard: (v) => set({ showBigCard: v }),
+
+  bigCardSong: null,
+  setBigCardSong: (song) => set({ bigCardSong: song }),
+
+  /* 🎧 QUEUE SET */
   setQueue: (songs, startIndex = 0) => {
     set({
       queue: songs,
@@ -68,6 +75,7 @@ export const usePlayerStore = create((set, get) => ({
     });
   },
 
+  /* ▶ PLAY SPECIFIC SONG */
   playAtIndex: (index) => {
     const { queue } = get();
     if (!queue[index]) return;
@@ -80,6 +88,12 @@ export const usePlayerStore = create((set, get) => ({
       isPlaying: true,
     });
 
+    // update big overlay content
+    set({
+      bigCardSong: queue[index],
+      showBigCard: true,
+    });
+
     const player = get().playerRef;
     if (player) {
       player.loadVideoById(videoId);
@@ -87,25 +101,30 @@ export const usePlayerStore = create((set, get) => ({
     }
   },
 
+  /* ▶ PAUSE / PLAY */
   togglePlay: () => {
     const { isPlaying, playerRef } = get();
-
     if (!playerRef) return;
+
     if (isPlaying) playerRef.pauseVideo();
     else playerRef.playVideo();
 
     set({ isPlaying: !isPlaying });
   },
 
+  /* ⏭ NEXT */
   nextSong: () => {
     const { currentIndex, queue } = get();
     if (currentIndex + 1 >= queue.length) return;
+
     get().playAtIndex(currentIndex + 1);
   },
 
+  /* ⏮ PREVIOUS */
   prevSong: () => {
     const { currentIndex } = get();
     if (currentIndex === 0) return;
+
     get().playAtIndex(currentIndex - 1);
   },
 }));

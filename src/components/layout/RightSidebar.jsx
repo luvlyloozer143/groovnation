@@ -19,18 +19,16 @@ export default function RightSidebar() {
 
       setLoadingRec(true);
 
-      let rec = await fetchRecommendations(current.artistId);
+      const rec = await fetchRecommendations(current.artistId);
 
-      // We assume every rec has youtubeId (after your new pipeline)
       setRecommended(rec);
-
       setLoadingRec(false);
     }
 
     loadRecommendations();
   }, [current?.id]);
 
-  const handlePlayRecommended = (song) => {
+  const playRecommended = (song) => {
     const newQueue = [song, ...queue.slice(currentIndex + 1)];
     setQueue(newQueue, 0);
     playAtIndex(0);
@@ -42,7 +40,8 @@ export default function RightSidebar() {
     <aside className="
       fixed top-16 right-0 w-64 h-[calc(100vh-4rem)]
       bg-white/30 dark:bg-black/30 backdrop-blur-2xl
-      shadow-xl border-l border-white/10 p-4 overflow-y-auto
+      border-l border-white/10
+      p-4 overflow-y-auto shadow-xl
       hidden lg:block z-30
     ">
       
@@ -91,7 +90,7 @@ export default function RightSidebar() {
         recommended.map((song) => (
           <div
             key={song.id}
-            onClick={() => handlePlayRecommended(song)}
+            onClick={() => playRecommended(song)}
             className="p-3 rounded-lg cursor-pointer mb-3 hover:bg-white/20 flex items-center gap-3"
           >
             <img src={song.cover} className="w-10 h-10 rounded-md object-cover" />
