@@ -5,7 +5,7 @@ export function setAccessToken(token) {
 }
 
 /* ============================================================
-   🎧 Fetch Tamil Trending Tracks
+   Fetch Tamil Trending Tracks
 ============================================================ */
 export async function fetchNewReleases() {
   if (!access_token) return [];
@@ -30,7 +30,7 @@ export async function fetchNewReleases() {
         artistId: t.artists?.[0]?.id || null,
         album: t.album.name,
         cover: t.album.images[0].url,
-        preview: t.preview_url,
+        preview: t.preview_url || null,
         external_url: t.external_urls?.spotify,
       }));
   } catch (err) {
@@ -40,7 +40,7 @@ export async function fetchNewReleases() {
 }
 
 /* ============================================================
-   🔍 Global Search
+   Global Search
 ============================================================ */
 export async function searchTracks(query) {
   if (!access_token) return [];
@@ -67,7 +67,7 @@ export async function searchTracks(query) {
         artistId: t.artists?.[0]?.id || null,
         album: t.album.name,
         cover: t.album.images[0]?.url,
-        preview: t.preview_url,
+        preview: t.preview_url || null,
         external_url: t.external_urls?.spotify,
       }));
   } catch (err) {
@@ -77,13 +77,12 @@ export async function searchTracks(query) {
 }
 
 /* ============================================================
-   ⭐ NEW — Recommended Songs (Based on Artist ID)
+   ⭐ Recommended Songs
 ============================================================ */
 export async function fetchRecommendations(artistId) {
   if (!access_token || !artistId) return [];
 
   try {
-    // First: get related artists
     const rel = await fetch(
       `https://api.spotify.com/v1/artists/${artistId}/related-artists`,
       { headers: { Authorization: `Bearer ${access_token}` } }
@@ -92,11 +91,10 @@ export async function fetchRecommendations(artistId) {
     if (!rel.ok) return [];
 
     const data = await rel.json();
-    const artists = data.artists.slice(0, 5).map((a) => a.id); // Top 5 similar artists
+    const artists = data.artists.slice(0, 5).map((a) => a.id);
 
     let finalSongs = [];
 
-    // Now fetch a few top tracks from each similar artist
     for (const id of artists) {
       const top = await fetch(
         `https://api.spotify.com/v1/artists/${id}/top-tracks?market=IN`,
@@ -115,13 +113,13 @@ export async function fetchRecommendations(artistId) {
             title: t.name,
             artist: t.artists.map((a) => a.name).join(", "),
             cover: t.album.images[0].url,
-            preview: t.preview_url,
-            external_url: t.external_urls.spotify,
+            preview: t.preview_url || null,
+            external_url: t.external_urls?.spotify,
           }))
       );
     }
 
-    return finalSongs.slice(0, 12); // return max 12 recommendations
+    return finalSongs.slice(0, 12);
   } catch (err) {
     console.error("Recommendation fetch error:", err);
     return [];

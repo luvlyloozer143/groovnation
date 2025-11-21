@@ -27,9 +27,10 @@ export default function RightSidebar() {
     loadRec();
   }, [current?.id]);
 
-  /* Play Recommended */
+  /* ⭐ FIXED — Play recommended without deleting queue */
   const playRecommended = (song) => {
-    setQueue([song], 0);
+    const newQueue = [song, ...queue];
+    setQueue(newQueue, 0);
     playAtIndex(0);
   };
 
@@ -111,7 +112,7 @@ export default function RightSidebar() {
         )
       )}
 
-      {/* ⭐ NEW — Recommended Songs */}
+      {/* ⭐ Recommended */}
       <h2 className="text-lg font-bold mt-6 mb-3 text-black dark:text-white">
         Recommended for You
       </h2>
