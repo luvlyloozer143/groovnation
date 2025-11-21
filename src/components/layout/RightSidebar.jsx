@@ -1,88 +1,103 @@
+// src/components/layout/RightSidebar.jsx
 "use client";
+
 import { useEffect, useState } from "react";
 import { usePlayerStore } from "@/lib/store";
 import { fetchRecommendations } from "@/lib/spotify";
 
 export default function RightSidebar() {
   const { queue, currentIndex, playAtIndex, setQueue } = usePlayerStore();
+
   const current = queue[currentIndex];
 
   const [recommended, setRecommended] = useState([]);
   const [loadingRec, setLoadingRec] = useState(false);
 
   useEffect(() => {
-    async function loadRec() {
+    async function loadRecommendations() {
       if (!current?.artistId) return;
+
       setLoadingRec(true);
-      const rec = await fetchRecommendations(current.artistId);
-      const withAudio = (await rec).filter(t => t.preview !== null);
-      setRecommended(withAudio);
+
+      let rec = await fetchRecommendations(current.artistId);
+
+      // We assume every rec has youtubeId (after your new pipeline)
+      setRecommended(rec);
+
       setLoadingRec(false);
     }
-    loadRec();
+
+    loadRecommendations();
   }, [current?.id]);
 
-  const playRecommended = (song) => {
-    const newQueue = [song, ...queue.slice(currentIndex + 1)]; // preserve next songs
+  const handlePlayRecommended = (song) => {
+    const newQueue = [song, ...queue.slice(currentIndex + 1)];
     setQueue(newQueue, 0);
     playAtIndex(0);
   };
 
-  // Show only songs AFTER current one
-  const nextInQueue = queue.slice(currentIndex + 1);
+  const nextUp = queue.slice(currentIndex + 1);
 
   return (
-    <aside className="fixed top-16 right-0 w-64 h-[calc(100vh-4rem)] bg-white/30 dark:bg-black/30 backdrop-blur-2xl shadow-xl border-l border-white/10 p-4 overflow-y-auto hidden lg:block z-30">
-      <h2 className="text-lg font-bold mb-3 text-black dark:text-white">Now Playing</h2>
+    <aside className="
+      fixed top-16 right-0 w-64 h-[calc(100vh-4rem)]
+      bg-white/30 dark:bg-black/30 backdrop-blur-2xl
+      shadow-xl border-l border-white/10 p-4 overflow-y-auto
+      hidden lg:block z-30
+    ">
+      
+      {/* NOW PLAYING */}
+      <h2 className="text-lg font-bold mb-3">Now Playing</h2>
       {current ? (
-        <div className="p-3 rounded-xl bg-purple-500/20 dark:bg-purple-600/30 shadow-md flex items-center gap-3 mb-6">
-          <img src={current.cover} className="w-12 h-12 rounded-lg object-cover shadow" alt="cover" />
-          <div className="flex flex-col">
+        <div className="p-3 rounded-xl bg-purple-500/20 shadow-md flex items-center gap-3 mb-6">
+          <img src={current.cover} className="w-12 h-12 rounded-lg object-cover" />
+          <div>
             <p className="font-semibold text-sm truncate">{current.title}</p>
             <p className="text-xs opacity-70 truncate">{current.artist}</p>
           </div>
         </div>
       ) : (
-        <p className="text-sm text-gray-500 mb-6">No song playing</p>
+        <p className="text-sm opacity-60 mb-6">No song playing</p>
       )}
 
-      <h2 className="text-lg font-bold mb-3 text-black dark:text-white">Next Up</h2>
-      {nextInQueue.length === 0 ? (
-        <p className="text-sm text-gray-500 mb-6">Queue is empty</p>
+      {/* NEXT UP */}
+      <h2 className="text-lg font-bold mb-3">Next Up</h2>
+      {nextUp.length === 0 ? (
+        <p className="text-sm opacity-60 mb-6">Queue is empty</p>
       ) : (
-        nextInQueue.map((track, i) => (
+        nextUp.map((song, idx) => (
           <div
-            key={track.id}
-            onClick={() => playAtIndex(currentIndex + 1 + i)}
-            className="p-3 rounded-lg cursor-pointer mb-3 transition-all hover:bg-white/20 dark:hover:bg-white/10 flex items-center gap-3"
+            key={song.id}
+            onClick={() => playAtIndex(currentIndex + 1 + idx)}
+            className="p-3 rounded-lg cursor-pointer mb-3 hover:bg-white/20 flex items-center gap-3"
           >
-            <img src={track.cover} className="w-10 h-10 rounded-md object-cover" alt="cover" />
-            <div className="flex flex-col overflow-hidden">
-              <p className="text-sm font-semibold truncate">{track.title}</p>
-              <p className="text-xs opacity-70 truncate">{track.artist}</p>
+            <img src={song.cover} className="w-10 h-10 rounded-md object-cover" />
+            <div className="truncate">
+              <p className="text-sm font-semibold truncate">{song.title}</p>
+              <p className="text-xs opacity-70 truncate">{song.artist}</p>
             </div>
           </div>
         ))
       )}
 
-      <h2 className="text-lg font-bold mt-6 mb-3 text-black dark:text-white">
-        Recommended for You
-      </h2>
+      {/* RECOMMENDED */}
+      <h2 className="text-lg font-bold mt-6 mb-3">Recommended</h2>
+
       {loadingRec ? (
-        <p className="text-sm text-gray-500">Loading…</p>
+        <p className="text-sm opacity-60">Loading…</p>
       ) : recommended.length === 0 ? (
-        <p className="text-sm text-gray-500">No recommendations yet</p>
+        <p className="text-sm opacity-60">No recommendations yet</p>
       ) : (
-        recommended.map((track) => (
+        recommended.map((song) => (
           <div
-            key={track.id}
-            onClick={() => playRecommended(track)}
-            className="p-3 rounded-lg cursor-pointer mb-3 transition-all hover:bg-white/20 dark:hover:bg-white/10 flex items-center gap-3"
+            key={song.id}
+            onClick={() => handlePlayRecommended(song)}
+            className="p-3 rounded-lg cursor-pointer mb-3 hover:bg-white/20 flex items-center gap-3"
           >
-            <img src={track.cover} className="w-10 h-10 rounded-md object-cover" alt="cover" />
-            <div className="flex flex-col overflow-hidden">
-              <p className="text-sm font-semibold truncate">{track.title}</p>
-              <p className="text-xs opacity-70 truncate">{track.artist}</p>
+            <img src={song.cover} className="w-10 h-10 rounded-md object-cover" />
+            <div className="truncate">
+              <p className="text-sm font-semibold truncate">{song.title}</p>
+              <p className="text-xs opacity-70 truncate">{song.artist}</p>
             </div>
           </div>
         ))

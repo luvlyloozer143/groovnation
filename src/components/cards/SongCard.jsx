@@ -2,94 +2,35 @@
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { usePlayerStore } from "@/lib/store";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
 
 export default function SongCard({ song }) {
-  const router = useRouter();
-  const [hover, setHover] = useState(false);
-  const player = usePlayerStore.getState();
 
-  const handleGlobalPlay = async (e) => {
-    e.stopPropagation();
+  const player = usePlayerStore();
 
-    // Import the full current list of songs from home
-    const { fetchNewReleases } = await import("@/lib/spotify");
-    const allSongs = await fetchNewReleases();
-
-    // Filter only songs with actual audio
-    const playableSongs = allSongs.filter(s => s.preview !== null);
-
-    // Find where this song is in the list
-    const index = playableSongs.findIndex(s => s.id === song.id);
-
-    if (index === -1) {
-      // Fallback: just play this one
-      player.setQueue([song], 0);
-      player.playAtIndex(0);
-    } else {
-      // Play from this song onward — like real Spotify!
-      const queueFromHere = playableSongs.slice(index);
-      player.setQueue(queueFromHere, 0);
-      player.playAtIndex(0);
-    }
+  const handlePlay = () => {
+    player.setQueue([song], 0);
+    player.setVideoId(song.youtubeId);
   };
 
   return (
     <motion.div
-      className="
-        w-44 sm:w-52 bg-white/10 dark:bg-black/30 backdrop-blur-xl
-        rounded-2xl p-3 flex flex-col items-center text-center shadow-md
-        hover:shadow-purple-400/20 transition-all duration-300
-      "
+      className="w-44 sm:w-52 bg-white/10 dark:bg-black/30 backdrop-blur-xl
+                 rounded-2xl p-3 flex flex-col items-center text-center shadow-md
+                 hover:shadow-purple-400/20 transition-all duration-300"
       whileHover={{ scale: 1.03 }}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
+      onClick={handlePlay}
     >
-      <div
-        className="relative w-full h-48 sm:h-52 rounded-xl overflow-hidden mb-3 group cursor-pointer"
-        onClick={handleGlobalPlay}
-      >
+      <div className="relative w-full h-48 sm:h-52 rounded-xl overflow-hidden mb-3">
         <Image
-          src={song.cover || "/fallback-cover.png"}
+          src={song.cover}
           alt={song.title}
           fill
-          className="object-cover rounded-xl group-hover:scale-105 transition-transform duration-300"
+          className="object-cover"
         />
-        <motion.div
-          className="absolute inset-0 flex items-center justify-center"
-          initial={{ opacity: 0, y: 60 }}
-          animate={{
-            opacity: hover ? 1 : 0,
-            y: hover ? 0 : 60,
-          }}
-          transition={{ duration: 0.35, ease: "easeOut" }}
-        >
-          <motion.div
-            whileHover={{ scale: 1.15 }}
-            className="
-              bg-black/80 rounded-full w-14 h-14
-              flex items-center justify-center shadow-xl
-            "
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="white"
-              viewBox="0 0 24 24"
-              stroke="none"
-              className="w-7 h-7 ml-1"
-            >
-              <path d="M5 3l14 9-14 9V3z" />
-            </svg>
-          </motion.div>
-        </motion.div>
       </div>
-      <h3 className="text-sm font-semibold text-black dark:text-white truncate w-full px-1">
-        {song.title}
-      </h3>
-      <p className="text-xs text-gray-600 dark:text-gray-300 truncate w-full px-1">
-        {song.artist}
-      </p>
+
+      <h3 className="text-sm font-semibold truncate">{song.title}</h3>
+      <p className="text-xs opacity-70 truncate">{song.artist}</p>
     </motion.div>
   );
 }

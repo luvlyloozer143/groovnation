@@ -3,16 +3,11 @@
 
 import { create } from "zustand";
 
-/* ---------------------------------------------------
-   🎛 UI STORE (sidebar + theme + search FIXED)
----------------------------------------------------- */
 export const useUIStore = create((set) => ({
   sidebarCollapsed: false,
   toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
 
-  // THEME (old GroovNation logic)
   darkMode: false,
-
   toggleTheme: () =>
     set((s) => {
       const newVal = !s.darkMode;
@@ -32,103 +27,70 @@ export const useUIStore = create((set) => ({
     }
   },
 
-  /* 🔍 SEARCH HANDLER (MISSING BEFORE — NOW FIXED) */
   onSearch: null,
   setOnSearch: (fn) => set({ onSearch: fn }),
 }));
 
-/* ---------------------------------------------------
-   🌓 Sync Theme
----------------------------------------------------- */
-export const useThemeSync = () => {
-  const theme = useUIStore((s) => s.darkMode);
-
-  if (typeof document !== "undefined") {
-    document.documentElement.classList.toggle("dark", theme);
-  }
-};
-
-/* ---------------------------------------------------
-   🎵 PLAYER STORE (unchanged — DO NOT TOUCH)
----------------------------------------------------- */
 export const usePlayerStore = create((set, get) => ({
   queue: [],
   currentIndex: 0,
   isPlaying: false,
-  shuffle: false,
-  repeat: "off",
-  audio: null,
 
+  // ⭐ YOUTUBE
+  videoId: null,
+  setVideoId: (id) => set({ videoId: id }),
+
+  playerRef: null,
+  setPlayerRef: (ref) => set({ playerRef: ref }),
+
+  // queue logic
   setQueue: (songs, startIndex = 0) => {
-    const audio = new Audio(songs[startIndex]?.preview || "");
-    audio.onended = () => get().handleSongEnd();
-
     set({
       queue: songs,
       currentIndex: startIndex,
-      audio,
-      isPlaying: false,
     });
   },
 
+  playAtIndex: (index) => {
+    const { queue } = get();
+    if (!queue[index]) return;
+
+    const videoId = queue[index].youtubeId;
+
+    set({
+      currentIndex: index,
+      videoId,
+      isPlaying: true,
+    });
+
+    const player = get().playerRef;
+    if (player) {
+      player.loadVideoById(videoId);
+      player.playVideo();
+    }
+  },
+
   togglePlay: () => {
-    const { audio, isPlaying } = get();
-    if (!audio) return;
-    isPlaying ? audio.pause() : audio.play();
+    const { isPlaying, playerRef } = get();
+
+    if (!playerRef) return;
+    if (isPlaying) playerRef.pauseVideo();
+    else playerRef.playVideo();
+
     set({ isPlaying: !isPlaying });
   },
 
   nextSong: () => {
-    const { queue, currentIndex, shuffle, repeat } = get();
-    if (queue.length === 0) return;
+    const { currentIndex, queue } = get();
+    if (currentIndex + 1 >= queue.length) return;
 
-    let nextIndex = currentIndex + 1;
-
-    if (shuffle) nextIndex = Math.floor(Math.random() * queue.length);
-    else if (nextIndex >= queue.length) {
-      if (repeat === "all") nextIndex = 0;
-      else return;
-    }
-    get().playAtIndex(nextIndex);
+    get().playAtIndex(currentIndex + 1);
   },
 
   prevSong: () => {
-    const { queue, currentIndex } = get();
-    if (queue.length === 0) return;
-    const prevIndex =
-      currentIndex === 0 ? queue.length - 1 : currentIndex - 1;
-    get().playAtIndex(prevIndex);
-  },
+    const { currentIndex } = get();
+    if (currentIndex === 0) return;
 
-  playAtIndex: (index) => {
-    const { queue, audio } = get();
-    if (!queue[index]) return;
-
-    if (audio) audio.pause();
-    const newAudio = new Audio(queue[index]?.preview || "");
-    newAudio.onended = () => get().handleSongEnd();
-
-    set({
-      currentIndex: index,
-      audio: newAudio,
-      isPlaying: true,
-    });
-
-    newAudio.play();
-  },
-
-  handleSongEnd: () => {
-    const { repeat, currentIndex } = get();
-    if (repeat === "one") return get().playAtIndex(currentIndex);
-    get().nextSong();
-  },
-
-  toggleShuffle: () => set((s) => ({ shuffle: !s.shuffle })),
-
-  toggleRepeat: () => {
-    const cycle = { off: "one", one: "all", all: "off" };
-    set((s) => ({ repeat: cycle[s.repeat] }));
+    get().playAtIndex(currentIndex - 1);
   },
 }));
-
-
