@@ -8,32 +8,44 @@ import { useState } from "react";
 export default function SongCard({ song }) {
   const router = useRouter();
   const [hover, setHover] = useState(false);
-
   const player = usePlayerStore.getState();
 
-  const handleGlobalPlay = (e) => {
+  const handleGlobalPlay = async (e) => {
     e.stopPropagation();
 
-    // 🟣 1. Set this song as queue + start playback
-    player.setQueue([song], 0);
-    player.playAtIndex(0);
+    // Import the full current list of songs from home
+    const { fetchNewReleases } = await import("@/lib/spotify");
+    const allSongs = await fetchNewReleases();
 
-    // 🟣 2. (Optional) If you want redirect:
-    // router.push(`/song/${song.id}`);
+    // Filter only songs with actual audio
+    const playableSongs = allSongs.filter(s => s.preview !== null);
+
+    // Find where this song is in the list
+    const index = playableSongs.findIndex(s => s.id === song.id);
+
+    if (index === -1) {
+      // Fallback: just play this one
+      player.setQueue([song], 0);
+      player.playAtIndex(0);
+    } else {
+      // Play from this song onward — like real Spotify!
+      const queueFromHere = playableSongs.slice(index);
+      player.setQueue(queueFromHere, 0);
+      player.playAtIndex(0);
+    }
   };
 
   return (
     <motion.div
       className="
-        w-44 sm:w-52 bg-white/10 dark:bg-black/30 backdrop-blur-xl 
-        rounded-2xl p-3 flex flex-col items-center text-center shadow-md 
+        w-44 sm:w-52 bg-white/10 dark:bg-black/30 backdrop-blur-xl
+        rounded-2xl p-3 flex flex-col items-center text-center shadow-md
         hover:shadow-purple-400/20 transition-all duration-300
       "
       whileHover={{ scale: 1.03 }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
-      {/* 🎵 Album Cover */}
       <div
         className="relative w-full h-48 sm:h-52 rounded-xl overflow-hidden mb-3 group cursor-pointer"
         onClick={handleGlobalPlay}
@@ -44,8 +56,6 @@ export default function SongCard({ song }) {
           fill
           className="object-cover rounded-xl group-hover:scale-105 transition-transform duration-300"
         />
-
-        {/* ▶ Play Button (Slide Up) */}
         <motion.div
           className="absolute inset-0 flex items-center justify-center"
           initial={{ opacity: 0, y: 60 }}
@@ -58,7 +68,7 @@ export default function SongCard({ song }) {
           <motion.div
             whileHover={{ scale: 1.15 }}
             className="
-              bg-black/80 rounded-full w-14 h-14 
+              bg-black/80 rounded-full w-14 h-14
               flex items-center justify-center shadow-xl
             "
           >
@@ -74,13 +84,9 @@ export default function SongCard({ song }) {
           </motion.div>
         </motion.div>
       </div>
-
-      {/* 🎶 Song Title */}
       <h3 className="text-sm font-semibold text-black dark:text-white truncate w-full px-1">
         {song.title}
       </h3>
-
-      {/* 👤 Artist */}
       <p className="text-xs text-gray-600 dark:text-gray-300 truncate w-full px-1">
         {song.artist}
       </p>
