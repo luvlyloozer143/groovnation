@@ -3,6 +3,9 @@
 
 import { create } from "zustand";
 
+/* ---------------------------------------------------
+   🎛 UI STORE
+---------------------------------------------------- */
 export const useUIStore = create((set) => ({
   sidebarCollapsed: false,
   toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
@@ -31,6 +34,20 @@ export const useUIStore = create((set) => ({
   setOnSearch: (fn) => set({ onSearch: fn }),
 }));
 
+/* ---------------------------------------------------
+   🌓 RESTORED THEME SYNC (THE FIX)
+---------------------------------------------------- */
+export const useThemeSync = () => {
+  const theme = useUIStore((s) => s.darkMode);
+
+  if (typeof document !== "undefined") {
+    document.documentElement.classList.toggle("dark", theme);
+  }
+};
+
+/* ---------------------------------------------------
+   🎵 PLAYER STORE (YOUTUBE LOGIC)
+---------------------------------------------------- */
 export const usePlayerStore = create((set, get) => ({
   queue: [],
   currentIndex: 0,
@@ -43,7 +60,7 @@ export const usePlayerStore = create((set, get) => ({
   playerRef: null,
   setPlayerRef: (ref) => set({ playerRef: ref }),
 
-  // queue logic
+  // Queue
   setQueue: (songs, startIndex = 0) => {
     set({
       queue: songs,
@@ -83,14 +100,12 @@ export const usePlayerStore = create((set, get) => ({
   nextSong: () => {
     const { currentIndex, queue } = get();
     if (currentIndex + 1 >= queue.length) return;
-
     get().playAtIndex(currentIndex + 1);
   },
 
   prevSong: () => {
     const { currentIndex } = get();
     if (currentIndex === 0) return;
-
     get().playAtIndex(currentIndex - 1);
   },
 }));
