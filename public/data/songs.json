@@ -1,0 +1,37 @@
+[
+  {
+    "id": "1",
+    "title": "Oorum Blood - From \"Dude\"",
+    "artist": "Sai Abhyankkar, Paal Dabba, bebhumika, Deepthi Suresh",
+    "cover": "/covers/1.jpg",
+    "youtubeId": "rV4H0j2mP1Q"
+  },
+  {
+    "id": "2",
+    "title": "Sidu Sidu",
+    "artist": "Barath Dhanasekar",
+    "cover": "/covers/2.jpg",
+    "youtubeId": "hVxC1EW1Y2Q"
+  },
+  {
+    "id": "3",
+    "title": "Monica (From \"Coolie\") (Tamil)",
+    "artist": "Anirudh Ravichander, Subhalashini, Asal Kolaar, Vishnu Edavan",
+    "cover": "/covers/3.jpg",
+    "youtubeId": "hnhFCEzYdjU"
+  },
+  {
+    "id": "4",
+    "title": "Raja Raja Chozhan (From \"Rettai Vaal Kuruvi\")",
+    "artist": "Ilaiyaraaja",
+    "cover": "/covers/4.jpg",
+    "youtubeId": "m1RouXjgK7c"
+  },
+  {
+    "id": "5",
+    "title": "Matta",
+    "artist": "Yuvan Shankar Raja",
+    "cover": "/covers/5.jpg",
+    "youtubeId": "Ay-urNn3WZw"
+  }
+]
