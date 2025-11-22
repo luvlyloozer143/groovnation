@@ -1,7 +1,10 @@
-// src/lib/store.js — 100% WORKING
+// src/lib/store.js
 "use client";
 import { create } from "zustand";
 
+/* ---------------------------------------------------
+   UI STORE (sidebar + theme + search)
+---------------------------------------------------- */
 export const useUIStore = create((set) => ({
   sidebarCollapsed: false,
   toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
@@ -27,15 +30,44 @@ export const useUIStore = create((set) => ({
   setOnSearch: (fn) => set({ onSearch: fn }),
 }));
 
-export const usePlayerStore = create((set, get) => ({
-  currentYoutubeId: null,
-  isPlaying: false,
+/* ---------------------------------------------------
+   Sync Theme (used in MainShell) — KEPT FOR VERCEL
+---------------------------------------------------- */
+export const useThemeSync = () => {
+  const theme = useUIStore((s) => s.darkMode);
+  if (typeof document !== "undefined") {
+    document.documentElement.classList.toggle("dark", theme);
+  }
+};
 
-  playSong: (youtubeId) => {
-    set({ currentYoutubeId: youtubeId, isPlaying: true });
+/* ---------------------------------------------------
+   PLAYER STORE — FULL YOUTUBE + CINEMATIC (NO preview_url)
+---------------------------------------------------- */
+export const usePlayerStore = create((set, get) => ({
+  queue: [],
+  currentIndex: 0,
+  isPlaying: false,
+  ytPlayer: null,
+
+  get currentSong() {
+    return get().queue[get().currentIndex];
   },
 
-  pauseSong: () => set({ isPlaying: false }),
-  resumeSong: () => set({ isPlaying: true }),
-  togglePlay: () => set((state) => ({ isPlaying: !state.isPlaying })),
+  setYtPlayer: (player) => set({ ytPlayer: player }),
+
+  playSong: (song) => {
+    set({ queue: [song], currentIndex: 0, isPlaying: true });
+    const player = get().ytPlayer;
+    if (player && song.youtubeId) {
+      player.loadVideoById(song.youtubeId);
+      player.playVideo();
+    }
+  },
+
+  togglePlay: () => {
+    const { ytPlayer, isPlaying } = get();
+    if (!ytPlayer) return;
+    isPlaying ? ytPlayer.pauseVideo() : ytPlayer.playVideo();
+    set({ isPlaying: !isPlaying });
+  },
 }));
