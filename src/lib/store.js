@@ -4,13 +4,15 @@
 import { create } from "zustand";
 
 /* ---------------------------------------------------
-   🎛 UI STORE
+   🎛 UI STORE (sidebar + theme + search)
 ---------------------------------------------------- */
 export const useUIStore = create((set) => ({
   sidebarCollapsed: false,
   toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
 
+  // THEME (old GroovNation logic)
   darkMode: false,
+
   toggleTheme: () =>
     set((s) => {
       const newVal = !s.darkMode;
@@ -30,12 +32,13 @@ export const useUIStore = create((set) => ({
     }
   },
 
+  /* 🔍 SEARCH HANDLER */
   onSearch: null,
   setOnSearch: (fn) => set({ onSearch: fn }),
 }));
 
 /* ---------------------------------------------------
-   🌓 RESTORED THEME SYNC (THE FIX)
+   🌓 Sync Theme (used in MainShell)
 ---------------------------------------------------- */
 export const useThemeSync = () => {
   const theme = useUIStore((s) => s.darkMode);
@@ -46,85 +49,96 @@ export const useThemeSync = () => {
 };
 
 /* ---------------------------------------------------
-   🎵 PLAYER STORE (YOUTUBE + OVERLAY)
+   🎵 PLAYER STORE (audio-based, original GroovNation)
 ---------------------------------------------------- */
 export const usePlayerStore = create((set, get) => ({
   queue: [],
   currentIndex: 0,
   isPlaying: false,
+  shuffle: false,
+  repeat: "off", // "off" | "one" | "all"
+  audio: null,
 
-  /* ⭐ YOUTUBE SUPPORT */
-  videoId: null,
-  setVideoId: (id) => set({ videoId: id }),
-
-  playerRef: null,
-  setPlayerRef: (ref) => set({ playerRef: ref }),
-
-  /* ⭐ BIG CARD OVERLAY SUPPORT */
-  showBigCard: false,
-  setShowBigCard: (v) => set({ showBigCard: v }),
-
-  bigCardSong: null,
-  setBigCardSong: (song) => set({ bigCardSong: song }),
-
-  /* 🎧 QUEUE SET */
+  // Set full queue and prepare first track
   setQueue: (songs, startIndex = 0) => {
+    const audio = new Audio(songs[startIndex]?.preview || "");
+    audio.onended = () => get().handleSongEnd();
+
     set({
       queue: songs,
       currentIndex: startIndex,
+      audio,
+      isPlaying: false,
     });
   },
 
-  /* ▶ PLAY SPECIFIC SONG */
-  playAtIndex: (index) => {
-    const { queue } = get();
-    if (!queue[index]) return;
-
-    const videoId = queue[index].youtubeId;
-
-    set({
-      currentIndex: index,
-      videoId,
-      isPlaying: true,
-    });
-
-    // update big overlay content
-    set({
-      bigCardSong: queue[index],
-      showBigCard: true,
-    });
-
-    const player = get().playerRef;
-    if (player) {
-      player.loadVideoById(videoId);
-      player.playVideo();
-    }
-  },
-
-  /* ▶ PAUSE / PLAY */
+  // Play / Pause
   togglePlay: () => {
-    const { isPlaying, playerRef } = get();
-    if (!playerRef) return;
-
-    if (isPlaying) playerRef.pauseVideo();
-    else playerRef.playVideo();
-
+    const { audio, isPlaying } = get();
+    if (!audio) return;
+    isPlaying ? audio.pause() : audio.play();
     set({ isPlaying: !isPlaying });
   },
 
-  /* ⏭ NEXT */
+  // Next track (with shuffle + repeat logic)
   nextSong: () => {
-    const { currentIndex, queue } = get();
-    if (currentIndex + 1 >= queue.length) return;
+    const { queue, currentIndex, shuffle, repeat } = get();
+    if (queue.length === 0) return;
 
-    get().playAtIndex(currentIndex + 1);
+    let nextIndex = currentIndex + 1;
+
+    if (shuffle) {
+      nextIndex = Math.floor(Math.random() * queue.length);
+    } else if (nextIndex >= queue.length) {
+      if (repeat === "all") nextIndex = 0;
+      else return;
+    }
+
+    get().playAtIndex(nextIndex);
   },
 
-  /* ⏮ PREVIOUS */
+  // Previous track
   prevSong: () => {
-    const { currentIndex } = get();
-    if (currentIndex === 0) return;
+    const { queue, currentIndex } = get();
+    if (queue.length === 0) return;
 
-    get().playAtIndex(currentIndex - 1);
+    const prevIndex =
+      currentIndex === 0 ? queue.length - 1 : currentIndex - 1;
+
+    get().playAtIndex(prevIndex);
+  },
+
+  // Play specific song in queue
+  playAtIndex: (index) => {
+    const { queue, audio } = get();
+    if (!queue[index]) return;
+
+    if (audio) audio.pause();
+    const newAudio = new Audio(queue[index]?.preview || "");
+    newAudio.onended = () => get().handleSongEnd();
+
+    set({
+      currentIndex: index,
+      audio: newAudio,
+      isPlaying: true,
+    });
+
+    newAudio.play();
+  },
+
+  // When song ends
+  handleSongEnd: () => {
+    const { repeat, currentIndex } = get();
+    if (repeat === "one") return get().playAtIndex(currentIndex);
+    get().nextSong();
+  },
+
+  // Shuffle toggle
+  toggleShuffle: () => set((s) => ({ shuffle: !s.shuffle })),
+
+  // Repeat cycle
+  toggleRepeat: () => {
+    const cycle = { off: "one", one: "all", all: "off" };
+    set((s) => ({ repeat: cycle[s.repeat] }));
   },
 }));
