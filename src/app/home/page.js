@@ -13,7 +13,9 @@ export default function HomePage() {
   const [tamilSongs, setTamilSongs] = useState([]);
   const [loading, setLoading] = useState(true);
   const setOnSearch = useUIStore((s) => s.setOnSearch);
-  const currentSong = usePlayerStore((s) => s.currentSong());
+  
+  // FIXED LINE — SSR SAFE
+  const currentSong = usePlayerStore((state) => state.currentSong());
 
   useEffect(() => {
     async function loadTamil() {

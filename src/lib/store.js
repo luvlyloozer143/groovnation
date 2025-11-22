@@ -2,9 +2,7 @@
 "use client";
 import { create } from "zustand";
 
-/* ---------------------------------------------------
-   UI STORE (sidebar + theme + search)
----------------------------------------------------- */
+/* UI STORE — unchanged */
 export const useUIStore = create((set) => ({
   sidebarCollapsed: false,
   toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
@@ -30,9 +28,7 @@ export const useUIStore = create((set) => ({
   setOnSearch: (fn) => set({ onSearch: fn }),
 }));
 
-/* ---------------------------------------------------
-   Sync Theme (used in MainShell) — KEPT FOR VERCEL
----------------------------------------------------- */
+/* REQUIRED FOR MainShell */
 export const useThemeSync = () => {
   const theme = useUIStore((s) => s.darkMode);
   if (typeof document !== "undefined") {
@@ -40,17 +36,17 @@ export const useThemeSync = () => {
   }
 };
 
-/* ---------------------------------------------------
-   PLAYER STORE — FULL YOUTUBE + CINEMATIC (NO preview_url)
----------------------------------------------------- */
+/* PLAYER STORE — SSR SAFE + FULL YOUTUBE */
 export const usePlayerStore = create((set, get) => ({
   queue: [],
   currentIndex: 0,
   isPlaying: false,
   ytPlayer: null,
 
-  get currentSong() {
-    return get().queue[get().currentIndex];
+  // SSR-SAFE: normal function, not getter
+  currentSong: () => {
+    const state = get();
+    return state.queue[state.currentIndex] || null;
   },
 
   setYtPlayer: (player) => set({ ytPlayer: player }),
@@ -67,7 +63,11 @@ export const usePlayerStore = create((set, get) => ({
   togglePlay: () => {
     const { ytPlayer, isPlaying } = get();
     if (!ytPlayer) return;
-    isPlaying ? ytPlayer.pauseVideo() : ytPlayer.playVideo();
+    if (isPlaying) {
+      ytPlayer.pauseVideo();
+    } else {
+      ytPlayer.playVideo();
+    }
     set({ isPlaying: !isPlaying });
   },
 }));
