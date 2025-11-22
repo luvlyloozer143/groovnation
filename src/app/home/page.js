@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import SongCard from "@/components/cards/SongCard";
 import YouTubeBackgroundPlayer from "@/components/YouTubeBackgroundPlayer";
+import Playerbar from "@/components/layout/Playerbar";
 import { setAccessToken, fetchNewReleases, searchTracks } from "@/lib/spotify";
 import { useUIStore, usePlayerStore } from "@/lib/store";
 
@@ -12,7 +13,7 @@ export default function HomePage() {
   const [tamilSongs, setTamilSongs] = useState([]);
   const [loading, setLoading] = useState(true);
   const setOnSearch = useUIStore((s) => s.setOnSearch);
-  const currentSong = usePlayerStore((s) => s.queue[s.currentIndex]);
+  const currentSong = usePlayerStore((s) => s.currentSong());
 
   useEffect(() => {
     async function loadTamil() {
@@ -43,17 +44,13 @@ export default function HomePage() {
         Trending Tamil Songs 2025
       </h2>
 
-      {/* Cinematic Background Video — Only when playing */}
-      {currentSong?.youtubeId && (
-        <div className="absolute inset-0 top-24 -z-20 pointer-events-none">
-          <YouTubeBackgroundPlayer videoId={currentSong.youtubeId} />
-        </div>
-      )}
+      <YouTubeBackgroundPlayer />
+      <Playerbar />
 
       {loading ? (
         <p className="text-gray-500 mt-6">Loading Tamil Songs…</p>
       ) : (
-        <div className="relative z-10 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-8 w-full justify-items-center px-2">
+        <div className="relative z-10 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-8 w-full justify-items-center px-2 pb-32">
           {songs.map((song) => (
             <SongCard key={song.id} song={song} />
           ))}

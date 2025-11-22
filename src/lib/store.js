@@ -1,18 +1,11 @@
 // src/lib/store.js
 "use client";
-
 import { create } from "zustand";
 
-/* ---------------------------------------------------
-   🎛 UI STORE (sidebar + theme + search)
----------------------------------------------------- */
 export const useUIStore = create((set) => ({
   sidebarCollapsed: false,
   toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
-
-  // THEME (old GroovNation logic)
   darkMode: false,
-
   toggleTheme: () =>
     set((s) => {
       const newVal = !s.darkMode;
@@ -22,7 +15,6 @@ export const useUIStore = create((set) => ({
       }
       return { darkMode: newVal };
     }),
-
   loadTheme: () => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("theme");
@@ -31,119 +23,54 @@ export const useUIStore = create((set) => ({
       set({ darkMode: isDark });
     }
   },
-
-  /* 🔍 SEARCH HANDLER */
   onSearch: null,
   setOnSearch: (fn) => set({ onSearch: fn }),
 }));
 
-/* ---------------------------------------------------
-   🌓 Sync Theme (used in MainShell)
----------------------------------------------------- */
 export const useThemeSync = () => {
   const theme = useUIStore((s) => s.darkMode);
-
   if (typeof document !== "undefined") {
     document.documentElement.classList.toggle("dark", theme);
   }
 };
 
-/* ---------------------------------------------------
-   🎵 PLAYER STORE (audio-based, original GroovNation)
----------------------------------------------------- */
 export const usePlayerStore = create((set, get) => ({
   queue: [],
   currentIndex: 0,
   isPlaying: false,
-  shuffle: false,
-  repeat: "off", // "off" | "one" | "all"
-  audio: null,
+  ytPlayer: null,
 
-  get currentSong() {
-    const state = get();
-    return state.queue[state.currentIndex];
+  currentSong: () => get().queue[get().currentIndex],
+
+  setYtPlayer: (player) => set({ ytPlayer: player }),
+
+  playSong: (song) => {
+    set({ queue: [song], currentIndex: 0, isPlaying: true });
+    const player = get().ytPlayer;
+    if (player && song.youtubeId) {
+      player.loadVideoById(song.youtubeId);
+      player.playVideo();
+    }
   },
 
-  // Set full queue and prepare first track
-  setQueue: (songs, startIndex = 0) => {
-    const audio = new Audio(songs[startIndex]?.preview || "");
-    audio.onended = () => get().handleSongEnd();
-
-    set({
-      queue: songs,
-      currentIndex: startIndex,
-      audio,
-      isPlaying: false,
-    });
-  },
-
-  // Play / Pause
   togglePlay: () => {
-    const { audio, isPlaying } = get();
-    if (!audio) return;
-    isPlaying ? audio.pause() : audio.play();
+    const { ytPlayer, isPlaying } = get();
+    if (!ytPlayer) return;
+    isPlaying ? ytPlayer.pauseVideo() : ytPlayer.playVideo();
     set({ isPlaying: !isPlaying });
   },
 
-  // Next track (with shuffle + repeat logic)
   nextSong: () => {
-    const { queue, currentIndex, shuffle, repeat } = get();
-    if (queue.length === 0) return;
-
-    let nextIndex = currentIndex + 1;
-
-    if (shuffle) {
-      nextIndex = Math.floor(Math.random() * queue.length);
-    } else if (nextIndex >= queue.length) {
-      if (repeat === "all") nextIndex = 0;
-      else return;
-    }
-
-    get().playAtIndex(nextIndex);
+    // For now: single song play (you can extend queue later)
+    // Auto next not supported yet — keeps current song
   },
 
-  // Previous track
   prevSong: () => {
-    const { queue, currentIndex } = get();
-    if (queue.length === 0) return;
-
-    const prevIndex =
-      currentIndex === 0 ? queue.length - 1 : currentIndex - 1;
-
-    get().playAtIndex(prevIndex);
+    // Same as next — single song mode
   },
 
-  // Play specific song in queue
-  playAtIndex: (index) => {
-    const { queue, audio } = get();
-    if (!queue[index]) return;
-
-    if (audio) audio.pause();
-    const newAudio = new Audio(queue[index]?.preview || "");
-    newAudio.onended = () => get().handleSongEnd();
-
-    set({
-      currentIndex: index,
-      audio: newAudio,
-      isPlaying: true,
-    });
-
-    newAudio.play();
-  },
-
-  // When song ends
-  handleSongEnd: () => {
-    const { repeat, currentIndex } = get();
-    if (repeat === "one") return get().playAtIndex(currentIndex);
-    get().nextSong();
-  },
-
-  // Shuffle toggle
-  toggleShuffle: () => set((s) => ({ shuffle: !s.shuffle })),
-
-  // Repeat cycle
-  toggleRepeat: () => {
-    const cycle = { off: "one", one: "all", all: "off" };
-    set((s) => ({ repeat: cycle[s.repeat] }));
+  setQueue: (songs, index = 0) => {
+    set({ queue: songs, currentIndex: index });
+    get().playSong(songs[index]);
   },
 }));
