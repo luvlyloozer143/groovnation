@@ -59,6 +59,11 @@ export const usePlayerStore = create((set, get) => ({
   repeat: "off", // "off" | "one" | "all"
   audio: null,
 
+  get currentSong() {
+    const state = get();
+    return state.queue[state.currentIndex];
+  },
+
   // Set full queue and prepare first track
   setQueue: (songs, startIndex = 0) => {
     const audio = new Audio(songs[startIndex]?.preview || "");

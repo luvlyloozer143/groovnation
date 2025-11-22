@@ -1,15 +1,14 @@
-// src/components/YouTubeBackgroundPlayer.jsx
 "use client";
-
 import { useEffect, useRef } from "react";
 import { usePlayerStore } from "@/lib/store";
 
-export default function YouTubeBackgroundPlayer() {
-  const { videoId, setPlayerRef, isPlaying } = usePlayerStore();
-  const localPlayerRef = useRef(null);
+export default function YouTubeBackgroundPlayer({ videoId }) {
+  const playerRef = useRef(null);
+  const { isPlaying } = usePlayerStore();
 
   useEffect(() => {
-    // Load YT API
+    if (!videoId) return;
+
     if (window.YT) initPlayer();
     else {
       const tag = document.createElement("script");
@@ -17,59 +16,49 @@ export default function YouTubeBackgroundPlayer() {
       document.body.appendChild(tag);
       window.onYouTubeIframeAPIReady = initPlayer;
     }
-  }, []);
+  }, [videoId]);
 
   const initPlayer = () => {
-    if (localPlayerRef.current) return;
+    if (playerRef.current) return;
 
-    const player = new window.YT.Player("yt-bg-player", {
-      height: "100%",
-      width: "100%",
+    new window.YT.Player("yt-cinematic-player", {
+      videoId,
       playerVars: {
-        autoplay: 0,
+        autoplay: 1,
         controls: 0,
-        loop: 1,
+        showinfo: 0,
         modestbranding: 1,
         rel: 0,
-        mute: 0,
+        fs: 0,
+        iv_load_policy: 3,
         playsinline: 1,
+        mute: 0,
       },
       events: {
-        onReady: (ev) => {
-          setPlayerRef(ev.target);
+        onReady: (e) => {
+          playerRef.current = e.target;
+          isPlaying ? e.target.playVideo() : e.target.pauseVideo();
         },
       },
     });
-
-    localPlayerRef.current = player;
   };
 
-  // Load + play video when a track selected
   useEffect(() => {
-    if (!videoId) return;
+    if (!playerRef.current || !videoId) return;
+    if (isPlaying) playerRef.current.playVideo();
+    else playerRef.current.pauseVideo();
+  }, [isPlaying, videoId]);
 
-    const player = usePlayerStore.getState().playerRef;
-    if (!player) return;
-
-    player.loadVideoById(videoId);
-    isPlaying ? player.playVideo() : player.pauseVideo();
-  }, [videoId, isPlaying]);
+  if (!videoId) return null;
 
   return (
-    <div className="absolute inset-0 w-full h-full overflow-hidden rounded-xl">
-
-      {/* Background YouTube video */}
+    <div className="fixed inset-0 -z-10 overflow-hidden">
       <div
-        id="yt-bg-player"
-        className="w-full h-full transition-all duration-500 
-                   opacity-0 pointer-events-none
-                   data-[active=true]:opacity-40"
-        data-active={videoId ? "true" : "false"}
+        id="yt-cinematic-player"
+        className="w-full h-full scale-150 blur-3xl opacity-50"
+        style={{ transform: "scale(1.5)", filter: "blur(80px) brightness(0.8)" }}
       />
-
-      {/* 🔥 Overlay container (Big Card will be placed here) */}
-      <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none" id="video-overlay-slot"></div>
-
+      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
     </div>
   );
 }
