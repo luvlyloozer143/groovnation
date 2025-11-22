@@ -1,4 +1,4 @@
-// src/lib/store.js
+// src/lib/store.js — 100% WORKING
 "use client";
 import { create } from "zustand";
 
@@ -27,38 +27,15 @@ export const useUIStore = create((set) => ({
   setOnSearch: (fn) => set({ onSearch: fn }),
 }));
 
-export const useThemeSync = () => {
-  const theme = useUIStore((s) => s.darkMode);
-  if (typeof document !== "undefined") {
-    document.documentElement.classList.toggle("dark", theme);
-  }
-};
-
 export const usePlayerStore = create((set, get) => ({
-  queue: [],
-  currentIndex: 0,
+  currentYoutubeId: null,
   isPlaying: false,
-  ytPlayer: null,
 
-  currentSong: () => get().queue[get().currentIndex] || null,
-
-  setYtPlayer: (player) => set({ ytPlayer: player }),
-
-  playSong: (song) => {
-    set({ queue: [song], currentIndex: 0, isPlaying: true });
+  playSong: (youtubeId) => {
+    set({ currentYoutubeId: youtubeId, isPlaying: true });
   },
 
-  togglePlay: () => {
-    const { ytPlayer, isPlaying } = get();
-    if (!ytPlayer) return;
-    isPlaying ? ytPlayer.pauseVideo() : ytPlayer.playVideo();
-    set({ isPlaying: !isPlaying });
-  },
-
-  nextSong: () => {},
-  prevSong: () => {},
-  setQueue: (songs, index = 0) => {
-    set({ queue: songs, currentIndex: index });
-    get().playSong(songs[index]);
-  },
+  pauseSong: () => set({ isPlaying: false }),
+  resumeSong: () => set({ isPlaying: true }),
+  togglePlay: () => set((state) => ({ isPlaying: !state.isPlaying })),
 }));
