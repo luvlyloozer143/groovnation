@@ -40,17 +40,12 @@ export const usePlayerStore = create((set, get) => ({
   isPlaying: false,
   ytPlayer: null,
 
-  currentSong: () => get().queue[get().currentIndex],
+  currentSong: () => get().queue[get().currentIndex] || null,
 
   setYtPlayer: (player) => set({ ytPlayer: player }),
 
   playSong: (song) => {
     set({ queue: [song], currentIndex: 0, isPlaying: true });
-    const player = get().ytPlayer;
-    if (player && song.youtubeId) {
-      player.loadVideoById(song.youtubeId);
-      player.playVideo();
-    }
   },
 
   togglePlay: () => {
@@ -60,15 +55,8 @@ export const usePlayerStore = create((set, get) => ({
     set({ isPlaying: !isPlaying });
   },
 
-  nextSong: () => {
-    // For now: single song play (you can extend queue later)
-    // Auto next not supported yet — keeps current song
-  },
-
-  prevSong: () => {
-    // Same as next — single song mode
-  },
-
+  nextSong: () => {},
+  prevSong: () => {},
   setQueue: (songs, index = 0) => {
     set({ queue: songs, currentIndex: index });
     get().playSong(songs[index]);
