@@ -1,5 +1,5 @@
 // src/lib/spotify.js
-import { YT_KEY } from "@/lib/env";
+const YT_KEY = process.env.NEXT_PUBLIC_YT_KEY;
 
 let access_token = null;
 export function setAccessToken(token) {
