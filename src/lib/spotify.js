@@ -1,57 +1,74 @@
-// src/lib/spotify.js — FINAL (STATIC JSON + FAST LOAD)
-
+// src/lib/spotify.js
 let access_token = null;
 export function setAccessToken(token) {
   access_token = token;
 }
 
 /* ============================================================
-   FETCH STATIC SONG LIST (NO YOUTUBE API CALLS)
+   Tamil Trending Songs
 ============================================================ */
 export async function fetchNewReleases() {
+  if (!access_token) return [];
+
   try {
-    const res = await fetch("/data/songs.json");
-    const songs = await res.json();
-    return songs;
+    const q = encodeURIComponent("Tamil 2025 OR Tamil Hits OR Tamil Trending");
+    const res = await fetch(
+      `https://api.spotify.com/v1/search?q=${q}&type=track&market=IN&limit=24`,
+      { headers: { Authorization: `Bearer ${access_token}` } }
+    );
+
+    if (!res.ok) return [];
+
+    const data = await res.json();
+
+    return data.tracks.items
+      .filter((t) => t.album?.images?.[0]?.url)
+      .map((t) => ({
+        id: t.id,
+        title: t.name,
+        artist: t.artists.map((a) => a.name).join(", "),
+        artistId: t.artists?.[0]?.id || null,
+        album: t.album.name,
+        cover: t.album.images[0].url,
+        preview: t.preview_url || null,    // ⭐ REQUIRED FOR PLAYERBAR
+        external_url: t.external_urls?.spotify,
+      }));
   } catch (err) {
-    console.error("Static song load error:", err);
+    console.error("Tamil fetch error:", err);
     return [];
   }
 }
 
 /* ============================================================
-   GLOBAL SEARCH (LOCAL SEARCH FROM STATIC DATA)
+   Global Search
 ============================================================ */
 export async function searchTracks(query) {
+  if (!access_token) return [];
+  if (!query || query.trim() === "") return [];
+
   try {
-    const res = await fetch("/data/songs.json");
-    const songs = await res.json();
-
-    if (!query || query.trim() === "") return songs;
-
-    const lower = query.toLowerCase();
-    return songs.filter(
-      (s) =>
-        s.title.toLowerCase().includes(lower) ||
-        s.artist.toLowerCase().includes(lower)
+    const res = await fetch(
+      `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=24&market=IN`,
+      { headers: { Authorization: `Bearer ${access_token}` } }
     );
-  } catch (err) {
-    console.error("Search filter error:", err);
-    return [];
-  }
-}
 
-/* ============================================================
-   RECOMMENDATIONS (STATIC SHUFFLED PICK)
-============================================================ */
-export async function fetchRecommendations() {
-  try {
-    const res = await fetch("/data/songs.json");
-    const songs = await res.json();
+    if (!res.ok) return [];
+    const data = await res.json();
 
-    return songs.sort(() => 0.5 - Math.random()).slice(0, 10);
+    return data.tracks.items
+      .filter((t) => t.album?.images?.[0]?.url)
+      .map((t) => ({
+        id: t.id,
+        title: t.name,
+        artist: t.artists.map((a) => a.name).join(", "),
+        artistId: t.artists?.[0]?.id || null,
+        album: t.album.name,
+        cover: t.album.images[0].url,
+        preview: t.preview_url || null,
+        external_url: t.external_urls?.spotify,
+      }));
   } catch (err) {
-    console.error("Recommendation error:", err);
+    console.error("Search error:", err);
     return [];
   }
 }

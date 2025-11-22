@@ -65,7 +65,7 @@ export default function SongCard({ song }) {
       <h3 className="text-sm font-semibold truncate w-full px-1">
         {song.title}
       </h3>
-      <p className="text-xs opacity-70 truncate w-full px-1">
+      <p className="text-xs opacity-70 truncate max-w-[120px]">
         {song.artist}
       </p>
     </motion.div>
