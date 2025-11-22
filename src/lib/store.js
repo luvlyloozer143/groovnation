@@ -1,11 +1,12 @@
 // src/lib/store.js
 "use client";
+
 import { create } from "zustand";
 
-/* UI STORE — unchanged */
 export const useUIStore = create((set) => ({
   sidebarCollapsed: false,
   toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
+
   darkMode: false,
   toggleTheme: () =>
     set((s) => {
@@ -16,6 +17,7 @@ export const useUIStore = create((set) => ({
       }
       return { darkMode: newVal };
     }),
+
   loadTheme: () => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("theme");
@@ -24,11 +26,11 @@ export const useUIStore = create((set) => ({
       set({ darkMode: isDark });
     }
   },
+
   onSearch: null,
   setOnSearch: (fn) => set({ onSearch: fn }),
 }));
 
-/* REQUIRED FOR MainShell */
 export const useThemeSync = () => {
   const theme = useUIStore((s) => s.darkMode);
   if (typeof document !== "undefined") {
@@ -36,38 +38,63 @@ export const useThemeSync = () => {
   }
 };
 
-/* PLAYER STORE — SSR SAFE + FULL YOUTUBE */
+/* ---------------------------------------------------
+   🎵 YOUTUBE PLAYER STORE
+---------------------------------------------------- */
 export const usePlayerStore = create((set, get) => ({
   queue: [],
   currentIndex: 0,
   isPlaying: false,
-  ytPlayer: null,
 
-  // SSR-SAFE: normal function, not getter
-  currentSong: () => {
-    const state = get();
-    return state.queue[state.currentIndex] || null;
+  videoId: null,
+  setVideoId: (id) => set({ videoId: id }),
+
+  playerRef: null,
+  setPlayerRef: (ref) => set({ playerRef: ref }),
+
+  setQueue: (songs, startIndex = 0) => {
+    set({
+      queue: songs,
+      currentIndex: startIndex,
+    });
   },
 
-  setYtPlayer: (player) => set({ ytPlayer: player }),
+  playAtIndex: (index) => {
+    const { queue } = get();
+    if (!queue[index]) return;
 
-  playSong: (song) => {
-    set({ queue: [song], currentIndex: 0, isPlaying: true });
-    const player = get().ytPlayer;
-    if (player && song.youtubeId) {
-      player.loadVideoById(song.youtubeId);
-      player.playVideo();
+    const videoId = queue[index].youtubeId;
+
+    set({
+      currentIndex: index,
+      videoId,
+      isPlaying: true,
+    });
+
+    const p = get().playerRef;
+    if (p) {
+      p.loadVideoById(videoId);
+      p.playVideo();
     }
   },
 
   togglePlay: () => {
-    const { ytPlayer, isPlaying } = get();
-    if (!ytPlayer) return;
-    if (isPlaying) {
-      ytPlayer.pauseVideo();
-    } else {
-      ytPlayer.playVideo();
-    }
+    const { isPlaying, playerRef } = get();
+    if (!playerRef) return;
+
+    isPlaying ? playerRef.pauseVideo() : playerRef.playVideo();
     set({ isPlaying: !isPlaying });
+  },
+
+  nextSong: () => {
+    const { currentIndex, queue } = get();
+    if (currentIndex + 1 >= queue.length) return;
+    get().playAtIndex(currentIndex + 1);
+  },
+
+  prevSong: () => {
+    const { currentIndex } = get();
+    if (currentIndex === 0) return;
+    get().playAtIndex(currentIndex - 1);
   },
 }));
