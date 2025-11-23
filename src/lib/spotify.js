@@ -6,105 +6,104 @@ export function setAccessToken(token) {
   access_token = token;
 }
 
-/* ============================================================
-   GET YOUTUBE VIDEO ID (official video first priority)
-============================================================ */
+/* SAFER YouTube Search — Handles 403 quota error gracefully */
 async function findYouTubeVideo(title, artist) {
-  try {
-    const q = encodeURIComponent(`${title} ${artist} official video`);
-    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=1&q=${q}&key=${YT_KEY}`;
+  if (!YT_KEY) return null;
 
-    const res = await fetch(url);
+  try {
+    const q = encodeURIComponent(`${title} ${artist} official audio OR official video`);
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=3&q=${q}&key=${YT_KEY}`;
+
+    const res = await fetch(url, { next: { revalidate: 3600 } }); // cache 1 hour
+    if (!res.ok) return null; // 403, 429, etc → skip silently
+
     const data = await res.json();
-    return data?.items?.[0]?.id?.videoId || null;
+    for (const item of data.items || []) {
+      if (item.id?.videoId) return item.id.videoId;
+    }
+    return null;
   } catch (e) {
-    console.error("YT search error:", e);
+    // Silently fail — your key is probably over quota
     return null;
   }
 }
 
-/* ============================================================
-   FETCH TAMIL TRENDING SONGS (real metadata)
-============================================================ */
+/* FETCH TAMIL TRENDING SONGS */
 export async function fetchNewReleases() {
   if (!access_token) return [];
 
   try {
-    const q = encodeURIComponent("Tamil Hits OR Tamil Trending 2025 OR Tamil");
     const res = await fetch(
-      `https://api.spotify.com/v1/search?q=${q}&type=track&market=IN&limit=24`,
+      "https://api.spotify.com/v1/search?q=tamil+2025+trending+OR+tamil+hits&type=track&market=IN&limit=30",
       { headers: { Authorization: `Bearer ${access_token}` } }
     );
     if (!res.ok) return [];
 
     const data = await res.json();
+    const items = data.tracks?.items || [];
 
-    const mapped = [];
-    for (const t of data.tracks.items) {
+    const songs = [];
+    for (const t of items) {
       if (!t.album?.images?.[0]?.url) continue;
 
-      const videoId = await findYouTubeVideo(t.name, t.artists[0]?.name);
+      const videoId = await findYouTubeVideo(t.name, t.artists?.[0]?.name || "");
 
-      mapped.push({
+      songs.push({
         id: t.id,
         title: t.name,
-        artist: t.artists.map((a) => a.name).join(", "),
-        artistId: t.artists?.[0]?.id,
+        artist: t.artists?.map(a => a.name).join(", ") || "Unknown",
+        artistId: t.artists?.[0]?.id || null,
         album: t.album.name,
         cover: t.album.images[0].url,
-        preview: videoId ? `https://www.youtube.com/watch?v=${videoId}` : null,
+        preview: t.preview_url,
         youtubeId: videoId,
       });
     }
-
-    return mapped;
+    return songs;
   } catch (err) {
-    console.error("Tamil fetch error:", err);
+    console.error("fetchNewReleases error:", err);
     return [];
   }
 }
 
-/* ============================================================
-   GLOBAL SEARCH (Spotify + YouTube ID)
-============================================================ */
+/* GLOBAL SEARCH */
 export async function searchTracks(query) {
-  if (!access_token) return [];
-  if (!query || query.trim() === "") return [];
+  if (!access_token || !query?.trim()) return [];
 
   try {
     const res = await fetch(
-      `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=24&market=IN`,
+      `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=30&market=IN`,
       { headers: { Authorization: `Bearer ${access_token}` } }
     );
+    if (!res.ok) return [];
 
     const data = await res.json();
-    const base = data.tracks.items.filter((t) => t.album?.images?.[0]?.url);
+    const items = data.tracks?.items || [];
 
-    const mapped = [];
-    for (const t of base) {
-      const videoId = await findYouTubeVideo(t.name, t.artists[0]?.name);
+    const songs = [];
+    for (const t of items) {
+      if (!t.album?.images?.[0]?.url) continue;
 
-      mapped.push({
+      const videoId = await findYouTubeVideo(t.name, t.artists?.[0]?.name || "");
+
+      songs.push({
         id: t.id,
         title: t.name,
-        artist: t.artists.map((a) => a.name).join(", "),
-        artistId: t.artists?.[0]?.id,
+        artist: t.artists?.map(a => a.name).join(", ") || "Unknown",
+        artistId: t.artists?.[0]?.id || null,
         cover: t.album.images[0].url,
-        preview: videoId ? `https://www.youtube.com/watch?v=${videoId}` : null,
+        preview: t.preview_url,
         youtubeId: videoId,
       });
     }
-
-    return mapped;
+    return songs;
   } catch (err) {
-    console.error("Search error:", err);
+    console.error("searchTracks error:", err);
     return [];
   }
 }
 
-/* ============================================================
-   RECOMMENDATIONS (Auto changes on now playing)
-============================================================ */
+/* RECOMMENDATIONS — NOW 100% SAFE (NO CRASH) */
 export async function fetchRecommendations(artistId) {
   if (!access_token || !artistId) return [];
 
@@ -114,37 +113,46 @@ export async function fetchRecommendations(artistId) {
       { headers: { Authorization: `Bearer ${access_token}` } }
     );
 
+    if (!rel.ok) return []; // 404 or error → just return empty
+
     const data = await rel.json();
-    const artists = data.artists.slice(0, 5).map((a) => a.id);
+    const relatedArtists = data.artists || [];
 
-    let finalSongs = [];
-    for (const id of artists) {
-      const top = await fetch(
-        `https://api.spotify.com/v1/artists/${id}/top-tracks?market=IN`,
-        { headers: { Authorization: `Bearer ${access_token}` } }
-      );
+    const recommendations = [];
 
-      const topData = await top.json();
+    for (const artist of relatedArtists.slice(0, 5)) {
+      try {
+        const top = await fetch(
+          `https://api.spotify.com/v1/artists/${artist.id}/top-tracks?market=IN`,
+          { headers: { Authorization: `Bearer ${access_token}` } }
+        );
+        if (!top.ok) continue;
 
-      for (const t of topData.tracks) {
-        if (!t.album?.images?.[0]?.url) continue;
+        const topData = await top.json();
+        const tracks = topData.tracks || [];
 
-        const videoId = await findYouTubeVideo(t.name, t.artists[0].name);
+        for (const t of tracks.slice(0, 3)) {
+          if (!t.album?.images?.[0]?.url) continue;
 
-        finalSongs.push({
-          id: t.id,
-          title: t.name,
-          artist: t.artists.map((a) => a.name).join(", "),
-          cover: t.album.images[0].url,
-          preview: videoId ? `https://www.youtube.com/watch?v=${videoId}` : null,
-          youtubeId: videoId,
-        });
+          const videoId = await findYouTubeVideo(t.name, t.artists?.[0]?.name || "");
+
+          recommendations.push({
+            id: t.id,
+            title: t.name,
+            artist: t.artists?.map(a => a.name).join(", ") || "Unknown",
+            cover: t.album.images[0].url,
+            preview: t.preview_url,
+            youtubeId: videoId,
+          });
+        }
+      } catch (e) {
+        continue; // skip this artist if top-tracks fails
       }
     }
 
-    return finalSongs.slice(0, 12);
+    return recommendations.slice(0, 12);
   } catch (err) {
-    console.error("Recommendation fetch error:", err);
+    console.warn("Recommendations failed (normal for some artists):", err);
     return [];
   }
 }
