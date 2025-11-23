@@ -1,19 +1,26 @@
+// src/components/cards/SongCard.jsx
 "use client";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { usePlayerStore } from "@/lib/store";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function SongCard({ song }) {
-  const router = useRouter();
   const [hover, setHover] = useState(false);
-  const player = usePlayerStore.getState();
+
+  // Get fresh state + actions (avoid stale closure)
+  const { queue, setQueue, playAtIndex } = usePlayerStore();
 
   const handlePlay = (e) => {
     e.stopPropagation();
-    player.setQueue([song], 0);
-    player.playAtIndex(0);
+
+    // NEW LOGIC: Insert clicked song at the front of the queue
+    // Removes duplicate if already in queue (optional but cleaner)
+    const filteredQueue = queue.filter((s) => s.id !== song.id);
+    const newQueue = [song, ...filteredQueue];
+
+    setQueue(newQueue, 0);   // song becomes index 0 → starts playing
+    playAtIndex(0);          // triggers canvas mode + YouTube playback
   };
 
   return (

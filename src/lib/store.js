@@ -1,12 +1,14 @@
 // src/lib/store.js
 "use client";
-
 import { create } from "zustand";
 
+/* ---------------------------------------------------
+   🎛 UI STORE (sidebar + theme + search)
+---------------------------------------------------- */
 export const useUIStore = create((set) => ({
   sidebarCollapsed: false,
   toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
-
+  // THEME (old GroovNation logic)
   darkMode: false,
   toggleTheme: () =>
     set((s) => {
@@ -17,7 +19,6 @@ export const useUIStore = create((set) => ({
       }
       return { darkMode: newVal };
     }),
-
   loadTheme: () => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("theme");
@@ -26,11 +27,14 @@ export const useUIStore = create((set) => ({
       set({ darkMode: isDark });
     }
   },
-
+  /* 🔍 SEARCH HANDLER */
   onSearch: null,
   setOnSearch: (fn) => set({ onSearch: fn }),
 }));
 
+/* ---------------------------------------------------
+   🌓 Sync Theme (used in MainShell)
+---------------------------------------------------- */
 export const useThemeSync = () => {
   const theme = useUIStore((s) => s.darkMode);
   if (typeof document !== "undefined") {
@@ -39,62 +43,86 @@ export const useThemeSync = () => {
 };
 
 /* ---------------------------------------------------
-   🎵 YOUTUBE PLAYER STORE
+   🎵 PLAYER STORE (audio-based, original GroovNation)
 ---------------------------------------------------- */
 export const usePlayerStore = create((set, get) => ({
   queue: [],
   currentIndex: 0,
   isPlaying: false,
-
-  videoId: null,
-  setVideoId: (id) => set({ videoId: id }),
-
-  playerRef: null,
-  setPlayerRef: (ref) => set({ playerRef: ref }),
-
+  shuffle: false,
+  repeat: "off", // "off" | "one" | "all"
+  audio: null,
+  canvasMode: false,  // NEW: For Spotify Canvas
+  get currentSong() {
+    const state = get();
+    return state.queue[state.currentIndex];
+  },
+  // Set full queue and prepare first track
   setQueue: (songs, startIndex = 0) => {
+    const audio = new Audio(songs[startIndex]?.preview || "");
+    audio.onended = () => get().handleSongEnd();
     set({
       queue: songs,
       currentIndex: startIndex,
+      audio,
+      isPlaying: false,
+      canvasMode: false,  // Reset canvas
     });
   },
-
-  playAtIndex: (index) => {
-    const { queue } = get();
-    if (!queue[index]) return;
-
-    const videoId = queue[index].youtubeId;
-
-    set({
-      currentIndex: index,
-      videoId,
-      isPlaying: true,
-    });
-
-    const p = get().playerRef;
-    if (p) {
-      p.loadVideoById(videoId);
-      p.playVideo();
-    }
-  },
-
+  // Play / Pause
   togglePlay: () => {
-    const { isPlaying, playerRef } = get();
-    if (!playerRef) return;
-
-    isPlaying ? playerRef.pauseVideo() : playerRef.playVideo();
+    const { audio, isPlaying } = get();
+    if (!audio) return;
+    isPlaying ? audio.pause() : audio.play();
     set({ isPlaying: !isPlaying });
   },
-
+  // Next track (with shuffle + repeat logic)
   nextSong: () => {
-    const { currentIndex, queue } = get();
-    if (currentIndex + 1 >= queue.length) return;
-    get().playAtIndex(currentIndex + 1);
+    const { queue, currentIndex, shuffle, repeat } = get();
+    if (queue.length === 0) return;
+    let nextIndex = currentIndex + 1;
+    if (shuffle) {
+      nextIndex = Math.floor(Math.random() * queue.length);
+    } else if (nextIndex >= queue.length) {
+      if (repeat === "all") nextIndex = 0;
+      else return;
+    }
+    get().playAtIndex(nextIndex);
   },
-
+  // Previous track
   prevSong: () => {
-    const { currentIndex } = get();
-    if (currentIndex === 0) return;
-    get().playAtIndex(currentIndex - 1);
+    const { queue, currentIndex } = get();
+    if (queue.length === 0) return;
+    const prevIndex =
+      currentIndex === 0 ? queue.length - 1 : currentIndex - 1;
+    get().playAtIndex(prevIndex);
+  },
+  // Play specific song in queue
+  playAtIndex: (index) => {
+    const { queue, audio } = get();
+    if (!queue[index]) return;
+    if (audio) audio.pause();
+    const newAudio = new Audio(queue[index]?.preview || "");
+    newAudio.onended = () => get().handleSongEnd();
+    set({
+      currentIndex: index,
+      audio: newAudio,
+      isPlaying: true,
+      canvasMode: true,  // NEW: Enable canvas mode
+    });
+    newAudio.play();
+  },
+  // When song ends
+  handleSongEnd: () => {
+    const { repeat, currentIndex } = get();
+    if (repeat === "one") return get().playAtIndex(currentIndex);
+    get().nextSong();
+  },
+  // Shuffle toggle
+  toggleShuffle: () => set((s) => ({ shuffle: !s.shuffle })),
+  // Repeat cycle
+  toggleRepeat: () => {
+    const cycle = { off: "one", one: "all", all: "off" };
+    set((s) => ({ repeat: cycle[s.repeat] }));
   },
 }));
